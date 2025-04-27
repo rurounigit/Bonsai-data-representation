@@ -7,10 +7,10 @@ module load OpenMPI/4.1.5-GCC-12.3.0
 
 export MPICC=(which mpicc)
 
-PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>”
+PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>"
 SCRIPT_PATH="bonsai_bash.sh"
 
-ID=“bonsai_example
+ID="bonsai_example"
 NCORES=5
 TIME="00:30:00"
 QOS=30min
