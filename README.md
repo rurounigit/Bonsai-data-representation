@@ -207,18 +207,17 @@ To test if *Bonsai* is set-up correctly, let's run it on a very small dataset of
 Let's create a YAML-file with the correct run configurations first. To keep things organized, we can store the YAML-file in the `1_simple_example`-folder:
 ```
 python3 bonsai/create_config_file.py \
---new_yaml_path examples/new_yaml.yaml \
---dataset simulated_binary_6_gens_samplingNoise \
---verbose True \
---data_folder examples/example_data/simulated_binary_6_gens_samplingNoise/ \
---results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
---filenames_data delta.txt,d_delta.txt \
---input_is_sanity_output True \
---zscore_cutoff 1.0 \
---UB_ellipsoid_size 1.0 --use_knn 10 \
---skip_greedy_merging False --skip_redo_starry False --skip_opt_times False --skip_nnn_reordering False \
---nnn_n_randommoves 100 --nnn_n_randomtrees 2 \
---pickup_intermediate False
+  --new_yaml_path examples/1_simple_example/example_configs.yaml \
+  --dataset simulated_binary_6_gens_samplingNoise \
+  --data_folder examples/example_data/simulated_binary_6_gens_samplingNoise/ \
+  --filenames_data delta_vmax.txt,d_delta_vmax.txt
+  --verbose True \
+  --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
+  --input_is_sanity_output True \
+  --zscore_cutoff 1.0 \
+  --nnn_n_randommoves 1000 \
+  --nnn_n_randomtrees 2 \
+  --use_knn 10
 ```
 You can open the YAML-file and see how the parameters are set. Also, please read the extensive comments to familiarize yourself with what the different options do.
 
