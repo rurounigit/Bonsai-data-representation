@@ -28,7 +28,8 @@ parser.add_argument('--new_yaml_path', type=str, default='my_config.yaml',
 # Arguments that define where to find the data and where to store results. Also, whether data comes from Sanity or not
 parser.add_argument('--dataset', type=str, default='new_dataset',
                     help='Identifier of dataset.')
-parser.add_argument('--data_folder', type=str, default='data',
+
+parser.add_argument('--data_folder', type=str, default='data/new_dataset',
                     help='Path (absolute or relative to "bonsai-development") to folder where input data can be found. '
                          'This folder should contain a file with means and standard-deviations in files "delta.txt" '
                          'and "d_delta.txt" unless filenames_data changes this behaviour.')
@@ -37,7 +38,7 @@ parser.add_argument('--results_folder', type=str, default=None,
                     help='# Path (absolute or relative to "bonsai-development") to folder where results will be '
                          'stored.')
 
-parser.add_argument('--filenames_data', type=str, default='delta_vmax.txt,d_delta_vmax.txt',
+parser.add_argument('--filenames_data', type=str, default='features.txt,standard_deviations.txt',
                     help='Filenames of input-files for means and standard deviations separated by a comma. These files '
                          'should have different cells as columns, and features (such as log transcription quotients) '
                          'as rows.')
@@ -50,15 +51,6 @@ parser.add_argument('--input_is_sanity_output', type=str2bool, default=True,
                          'Bonsai-publication. '
                          'If your input-data is not Sanity-output, set this flag to False, but make sure to provide '
                          'Bonsai with the required means and variances of the likelihood (P(D | x)).')
-parser.add_argument('--tmp_folder', type=str, default='',
-                    help='(ADVANCED): Path (absolute path or relative to "bonsai-development") pointing to a '
-                         'tree-folder from which Bonsai reconstruction will start. Relevant if one wants to start '
-                         'from a tree other than the usual star-tree, for example if one already created a '
-                         'tree-object where cellstates were connected to a common ancestor.')
-parser.add_argument('--pickup_intermediate', type=str2bool, default=False,
-                    help='Decides whether we look for intermediate results from previous runs or not. '
-                         'These intermediate results are periodically stored during any normal run, and can thus be '
-                         'used when a run did not finalize.')
 
 # Arguments that determine running configurations of bonsai. How much is printed, which steps are run?
 parser.add_argument('--verbose', type=str2bool, default=True,
@@ -83,7 +75,7 @@ parser.add_argument("--use_knn", type=int, default=10,
 
 parser.add_argument("--nnn_n_randommoves", type=int, default=1000,
                     help="Decides how many random nearest-neighbor-interchange-moves we do before doing them greedily.")
-parser.add_argument("--nnn_n_randomtrees", type=int, default=1,
+parser.add_argument("--nnn_n_randomtrees", type=int, default=10,
                     help="Decides how many random trees we create before taking the tree with the highest "
                          "loglikelihood and doing nnn greedily. Since the creation of one random tree is not "
                          "parallelized, it never hurts to set nnn_n_randomtrees equal to the number of cores that are "
@@ -132,6 +124,17 @@ parser.add_argument("--skip_nnn_reordering", type=str2bool, default=False,
                     help="Decides whether we go over edges and try to reconfigure all connected nodes (which are thus"
                          "next-nearest-neighbours).")
 
+parser.add_argument('--pickup_intermediate', type=str2bool, default=False,
+                    help='Decides whether we look for intermediate results from previous runs or not. '
+                         'These intermediate results are periodically stored during any normal run, and can thus be '
+                         'used when a run did not finalize.')
+
+parser.add_argument('--tmp_folder', type=str, default='',
+                    help='(ADVANCED): Path (absolute path or relative to "bonsai-development") pointing to a '
+                         'tree-folder from which Bonsai reconstruction will start. Relevant if one wants to start '
+                         'from a tree other than the usual star-tree, for example if one already created a '
+                         'tree-object where cellstates were connected to a common ancestor.')
+
 args = parser.parse_args()
 
 template_yaml_path = os.path.join('bonsai', 'config_template_do_not_change', 'config_template.yaml')
@@ -146,7 +149,9 @@ with open(template_yaml_path, 'r') as file_obj:
 yaml_dict = dict(yaml_file)
 for label in yaml_dict:
     try:
-        yaml_file[label] = getattr(args, label)
+        args_attrib = getattr(args, label)
+        if args_attrib is not None:
+            yaml_file[label] = getattr(args, label)
     except AttributeError:
         pass
 
