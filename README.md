@@ -95,7 +95,6 @@ python3 bonsai/create_config_file.py \
   --new_yaml_path examples/1_simple_example/example_configs.yaml \
   --dataset simulated_binary_6_gens_samplingNoise \
   --data_folder examples/example_data/simulated_binary_6_gens_samplingNoise/ \
-  --filenames_data delta_vmax.txt,d_delta_vmax.txt \
   --verbose True \
   --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
   --input_is_sanity_output True \
@@ -140,16 +139,19 @@ The results will be stored in the results-folder as indicated in the .yaml-file.
 * a copy of the configuration YAML-file with an added timestamp. In this way, one can always see with what running configurations the results were created, and when this run was started.
 
 ## Running Bonsai on other data-types
+As we describe in the *Bonsai*-paper, *Bonsai* can be used to reconstruct the maximum likelihood tree on any dataset with objects that have features in a high-dimensional feature space. However, it is necessary that the data is normalized first to align with the likelihood model that *Bonsai* uses. In short, *Bonsai* assumes that, for each object, the input specifies a vector of estimated features (`features.txt`) with error-bars (`standard_deviations.txt`). The input data should be normalized such that the likelihood of the `measured' features is reasonably approximated by a multi-variate Gaussian with means given by `features.txt` and standard-deviations given by `standard_deviations.txt`, and negligible covariances. As we extensively discuss int he paper for scRNA-seq data, this may require a careful definition of the variables to be inferred, which will depend on the data type. Apart from the specific application for scRNA-seq, it will be up to the user to provide appropriately normalized data to \emph{Bonsai}.
 
 ### The required files
 To use *Bonsai* on a general dataset that contains $C$ objects in an $G$-dimensional feature space, we need to provide it with:
 * `features.txt`: This should be a tab-separated file containing a matrix with $G$ rows and $C$ columns. The file should only contain the data, no header or index. Column $i$ should give the best estimates of the feature values for object $i$. 
 * (optional) `standard_deviations.txt`: This should be a tab-separated file containing a matrix with $G$ rows and $C$ columns. The file should only contain the data, no header or index. Column $i$ should give standard deviations corresponding to the measurement noise on the features, i.e., they should give the uncertainty on the feature values provided in `features.txt`. If `standard_deviations.txt` is not provided, *Bonsai* will assume that the uncertainty on the feature values is very small.
-* (optional) `cellID.txt`: Here, one can provide IDs for the objects. This should be a simple text file with on each row an object-ID corresponding to the columns in `features.txt`.
-* (optional) `geneID.txt`: Here, one can provide IDs for the features. This should be a simple text file with on each row a feature-ID corresponding to the rows in `features.txt`.
+* (optional) `cellID.txt`: Here, one can provide IDs for the objects. This should be a simple text file with on each row an object-ID corresponding to the columns in `features.txt`. *Note that we extend the term `cellID` here to refer to all object-IDs, this is a harmless historical artifact.*
+* (optional) `geneID.txt`: Here, one can provide IDs for the features. This should be a simple text file with on each row a feature-ID corresponding to the rows in `features.txt`. *Note that we extend the term `geneID` here to refer to all feature-IDs, this, again, is a harmless historical artifact.*
 
-### The Bonsai running configurations for general data types
-
+### The Bonsai run-configurations for general data types
+After the data have been properly normalized, running *Bonsai* happens similarly to what was described before for *Sanity*-output. The major differences are:
+* The argument `--input_is_sanity_output` should now be set to `False`.
+* The argument `--filenames_data` should now be used to point *Bonsai* to the files with features and error-bars, while for *Sanity*-output we know that this is given by `delta_vmax.txt,d_delta_vmax.txt`. So, for example, one could give `--filenames_data features.txt,standard_deviations.txt`.
 
 ## *Bonsai-scout*: Visualizing the *Bonsai* results
 The reconstructed tree can be visualized in the Bonsai-scout-app that was developed for this. 
@@ -168,7 +170,7 @@ pip install -r requirements_bonsai_scout.txt
 ```
 
 ### Preprocessing for the visualization
-Before running the app, we must first do a preprocessing run, using (from "Bonsai-data-representation")
+Before running the app, we must first do a preprocessing run, using (from the directory "Bonsai-data-representation")
 ```
 python3 bonsai_scout/bonsai_scout_preprocess.py \
 --results_folder <BONSAI_RESULTS_FOLDER> \
@@ -186,25 +188,26 @@ cellID,experimenter,measurement
 4028K12031A_S28,A,0.29
 11K12011T_S1,T,0.493
 ```
-One can also provide full feature matrices. These additional features can be visualized on the trees, just like gene expression data, or can be used to call marker features for a specific subset on the tree. **Make sure to start the filename of this annotation-file with `mat_`, for example `mat_UMI_counts`.** The file should be in the same format as a normal annotation file, but the preprocessing will assume that only numerical values are given.
+One can also provide full feature matrices. These additional features can be visualized on the trees just like gene expression data, or can be used to call marker features for a specific subset on the tree. **Make sure to start the filename of this annotation-file with `mat_`, for example `mat_UMI_counts`.** The file should be in the same format as a normal annotation file, but the preprocessing will assume that only numerical values are given.
 
 The preprocessing step will create two files and store them in the *Bonsai* results-folder:
-- `bonsai_vis_data.hdf` which contains all the necessary data. This file will not be changed while running the *Shiny*-app.
-- `bonsai_vis_settings.json` which contains the default settings for the visualization. When you interact with the app, the data in this file will be updated. In the app, one can then store these settings, after which a `bonsai_vis_settings_<TIMESTAMP>.json` will be created. This file can then be used for a later run of the app, to retrieve the same settings. Since this `.json`-file is human-readable and -editable, one can also edit some settings manually, for example for picking a customized colormap.
+- `bonsai_vis_data.hdf` which contains all the necessary data. This file will not be changed while running *Bonsai-scout*.
+- `bonsai_vis_settings.json` which contains the default settings for the visualization. Since this `.json`-file is human-readable and -editable, one can edit some settings manually, for example for picking a customized colormap.
 
-### Running the shiny app
-Now you can view your results in *Bonsai*'s Shiny app by running (from the "Bonsai-data-representation"-directory)
+### Running *Bonsai-scout*
+Now you can view your results in *Bonsai-scout* by running (from the "Bonsai-data-representation"-directory)
 ```
 python3 bonsai_scout/run_bonsai_scout_app.py \
 --results_folder <BONSAI_RESULTS_FOLDER> \
---settings_filename bonsai_vis_settings.json
+--settings_filename bonsai_vis_settings.json \
+--port 1234
 ```
 There should now be a print message pointing you to the correct link: 
-```Your app will shortly be running at: http://0.0.0.0:8243. Use your browser (not Safari) to view it.```
+```Your app will shortly be running at: http://0.0.0.0:1234. Use your browser (not Safari) to view it.```
 and
-```INFO:     Uvicorn running on http://0.0.0.0:8243 (Press CTRL+C to quit)```
+```INFO:     Uvicorn running on http://0.0.0.0:1234 (Press CTRL+C to quit)```
 
-**Warning: if you are running these commands through an SSH-connection, your link will not be correct. In that case you should do something like `http://<ADDRESS_OF_MY_SSH_NODE>:8243/`**, where 8243 matches the random port that is reported to you in the print-messages. **Warning 2:** The Shiny app, seems to sometimes have trouble running through the ssh-connection, resulting in a weird error-message that we should still debug. To be on the safe side, download the files `bonsai_vis_data.hdf`, `bonsai_vis_settings.json` to your personal computer and run the app from there.
+**Warning: if you are running these commands through an SSH-connection, your link will not be correct. In that case you should do something like `http://<ADDRESS_OF_MY_SSH_NODE>:8243/`**, where 1234 matches the port that is reported to you in the print-messages, and that you could have picked yourself using the `--port` argument.
 
 ## Example 1: Your first *Bonsai* run
 To test if *Bonsai* is set-up correctly, let's run it on a very small dataset of 64 cells. The output from *Sanity* for this dataset is stored in `Bonsai-data-representation/examples/example_data/simulated_binary_6_gens_samplingNoise`. 
@@ -214,7 +217,6 @@ python3 bonsai/create_config_file.py \
   --new_yaml_path examples/1_simple_example/example_configs.yaml \
   --dataset simulated_binary_6_gens_samplingNoise \
   --data_folder examples/example_data/simulated_binary_6_gens_samplingNoise/ \
-  --filenames_data delta_vmax.txt,d_delta_vmax.txt
   --verbose True \
   --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
   --input_is_sanity_output True \
@@ -235,7 +237,7 @@ This can take a few minutes. At the moment there is still a lot of output printe
 
 Results will be stored in the indicated results_folder: `examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/`. If the *Bonsai*-run fully completed, there will be a directory called `final_bonsai_zscore1.0`. You can view the results there.
 
-We will now visualize the tree with some cell-annotation. For this, we already provide an annotation-file at `examples/example_data/simulated_binary_6_gens_samplingNoise/celltype_annotation.csv`. Since this simulated dataset is a binary tree, we annotated the cells by their clade at different heights of the tree. 
+We will now visualize the tree with some cell-annotation. For this, we already provide an annotation-folder at `examples/example_data/simulated_binary_6_gens_samplingNoise/annotation`. Since this simulated dataset is a binary tree, we annotated the cells by their clade at different heights of the tree. 
 
 Now run the preprocessing of the visualization:
 ```
@@ -252,10 +254,8 @@ python3 bonsai_scout/run_bonsai_scout_app.py \
 --settings_filename bonsai_vis_settings.json \
 --port 1234
 ```
-
-where you should replace 1234 by your favourite 4-digit number. There should now be a print message pointing you to the correct link: 
+There should now be a print message pointing you to the correct link: 
 ```Your app will shortly be running at: http://0.0.0.0:1234. Use your browser (not Safari) to view it.```
-When running Bonsai-scout from a computing cluster, this link may not be entirely correct, because often `http://0.0.0.0:` will be replaced by some compute-node-dependent prefix.
 
 ## Example 2: Running *Bonsai* on an HPC-cluster
 We will here give an example script on how to run *Bonsai* on an HPC cluster. The example is based on a Slurm-environment, but the basic principles can probably be generalized to other HPC-architectures.
@@ -280,10 +280,10 @@ module load OpenMPI/4.1.5-GCC-12.3.0
 
 export MPICC=(which mpicc)
 
-PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>”
+PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>"
 SCRIPT_PATH="bonsai_bash.sh"
 
-ID=“bonsai_example
+ID="bonsai_example"
 NCORES=5
 TIME="00:30:00"
 QOS=30min
