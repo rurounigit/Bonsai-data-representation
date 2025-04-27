@@ -245,15 +245,17 @@ python3 bonsai_scout/bonsai_scout_preprocess.py \
   --take_all_genes False \
   --config_filepath ''
 ```
-Finally, run the following command to start the Shiny-app:
+Finally, run the following command to start *Bonsai-scout*:
 ```
 python3 bonsai_scout/run_bonsai_scout_app.py \
 --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
---settings_filename bonsai_vis_settings.json
+--settings_filename bonsai_vis_settings.json \
+--port 1234
 ```
 
-There should now be a print message pointing you to the correct link: 
-```Your app will shortly be running at: http://0.0.0.0:8243. Use your browser (not Safari) to view it.```
+where you should replace 1234 by your favourite 4-digit number. There should now be a print message pointing you to the correct link: 
+```Your app will shortly be running at: http://0.0.0.0:1234. Use your browser (not Safari) to view it.```
+When running Bonsai-scout from a computing cluster, this link may not be entirely correct, because often `http://0.0.0.0:` will be replaced by some compute-node-dependent prefix.
 
 ## Example 2: Running *Bonsai* on an HPC-cluster
 We will here give an example script on how to run *Bonsai* on an HPC cluster. The example is based on a Slurm-environment, but the basic principles can probably be generalized to other HPC-architectures.
@@ -262,11 +264,12 @@ We have divided *Bonsai* into three main steps: `preprocess`, `core_calc`, and `
 
 An example *slurm*-script is given in `examples/2_bonsai_on_slurm/example_slurm_script.sh`, and we also added it below in this read-me. Note that there are some constants that one may need to adapt depending on the size of your dataset, i.e. `N_CORES`, `TIME`, `QOS`, `MEM_PER_CORE`. Also, make sure to adapt `PATH_TO_CODE` to have the absolute path to the `Bonsai-data-representation`-directory.
 
-The `for`-loop that currently runs over only one value, can be used to start a *Bonsai* run on several datasets (with run configurations defined in their YAML-files) with only one script. The paths to the YAML-files have to be stored on different lines in a file called `yaml_paths.txt` which should be in the same folder as the slurm-script. The slurm-script will call a bash-script that executes the final *Python* call and that should also be in the same folder. You can find our example bash-script below.
+The `for`-loop that currently runs over only one value, can be used to start *Bonsai* on several datasets (with run configurations defined in their YAML-files) with only one script. The paths to the YAML-files have to be stored on different lines in a file called `yaml_paths.txt` which should be in the same folder as the slurm-script. The slurm-script will call a bash-script that executes the final *Python* call and that should also be in the same folder. You can find our example bash-script below.
 
-One can now start the Bonsai-runs on all the datasets comprised in `yaml_paths.txt` by calling `sh example_run_script.sh`.
+One can now start the Bonsai-runs on all the datasets comprised in `yaml_paths.txt` by calling `bash example_run_script.sh`.
 
 **example_slurm_script.sh**
+Note that in the following you still have to change the arguments to `<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>` and `<YOUR_EMAIL>`.
 ```
 #!/bin/bash
 
@@ -277,26 +280,30 @@ module load OpenMPI/4.1.5-GCC-12.3.0
 
 export MPICC=(which mpicc)
 
-PATH_TO_CODE="<PATH_TO_BONSAI_DEVELOPMENT>/Bonsai-data-representation"
+PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>”
 SCRIPT_PATH="bonsai_bash.sh"
 
-ID="bonsai_batch"
+ID=“bonsai_example
 NCORES=5
-TIME="06:00:00"
-QOS=6hours
-MEM_PER_CORE=5
+TIME="00:30:00"
+QOS=30min
+MEM_PER_CORE=4
 
 mem=$((NCORES*MEM_PER_CORE))G
 
-for i in {1..1}
+file="yaml_paths.txt"
+line_count=$(wc -l < "$file")
+
+for (( i=1; i<=$line_count; i++ ))
 do
   YAML_PATH=$(head -n ${i} ./yaml_paths.txt | tail -1)
+
   echo Starting Bonsai based on configuration file: ${YAML_PATH}
 
   preprocess_id=$(sbatch --export ALL  --parsable --mem=${mem} --cpus-per-task=1 --ntasks=${NCORES} --nodes=1 --time=00:30:00 \
-  --output=./outerr/dataset${i}%x_%j.out \
-  --error=./outerr/dataset${i}%x_%j.err --qos=30min \
-  --job-name="${ID}"_bonsai_pre_${i} \
+  --output=./outerr/pre_dataset${i}%x_%j.out \
+  --error=./outerr/pre_dataset${i}%x_%j.err --qos=30min \
+  --job-name="${ID}"_${i} \
   ${SCRIPT_PATH} -n ${NCORES} -s preprocess -y ${YAML_PATH})
 
   #preprocess_id is a jobID; pass to next call as dependency
@@ -304,25 +311,25 @@ do
 
  core_calc_id=$(sbatch --export ALL  --parsable --mem=${mem} --cpus-per-task=1 --ntasks=${NCORES} --nodes=1 --time=${TIME} \
   --dependency=afterok:$preprocess_id \
-  --output=./outerr/dataset${i}%x_%j.out \
-  --error=./outerr/dataset${i}%x_%j.err --qos=${QOS} \
-  --job-name="${ID}"_bonsai_core_${i} \
+  --output=./outerr/core_dataset${i}%x_%j.out \
+  --error=./outerr/core_dataset${i}%x_%j.err --qos=${QOS} \
+  --job-name="${ID}"_${i} \
   --mail-type=END,FAIL \
-  --mail-user=your.mailaddress@univ.ch \
+  --mail-user=<YOUR_EMAIL> \
   ${SCRIPT_PATH} -n ${NCORES} -s core_calc -y ${YAML_PATH})
 
  sbatch --export ALL  --mem=${mem} --cpus-per-task=1 --ntasks=1 --time=00:30:00 \
   --dependency=afterok:$core_calc_id \
-  --output=./outerr/dataset${i}%x_%j.out \
-  --error=./outerr/dataset${i}%x_%j.err --qos=30min \
-  --job-name="${ID}"_bonsai_metadata_${i} \
-  --mail-type=END,FAIL \
-  --mail-user=your.mailaddress@univ.ch \
+  --output=./outerr/metadata_dataset${i}%x_%j.out \
+  --error=./outerr/metadata_dataset${i}%x_%j.err --qos=30min \
+  --job-name="${ID}"_${i} \
   ${SCRIPT_PATH} -n ${NCORES} -s metadata -y ${YAML_PATH}
+
 done
 ```
 
 **bonsai_bash.sh**
+In the following, you again have to replace `<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>`:
 ```
 #!/bin/bash
 
@@ -335,7 +342,7 @@ do
     esac
 done
 
-PATH_TO_CODE="/scicore/home/nimwegen/degroo0000/Bonsai-data-representation"
+PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>"
 
 srun python -m mpi4py ${PATH_TO_CODE}/bonsai/bonsai_main.py --config_filepath ${YAML_PATH} --step ${STEP}
 ```
