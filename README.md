@@ -92,10 +92,11 @@ From the main directory "Bonsai-data-representation" one can for example run (no
 relative to the "Bonsai-data-representation"-folder):
 ```
 python3 bonsai/create_config_file.py \
-  --new_yaml_path examples/new_yaml.yaml \
+  --new_yaml_path examples/1_simple_example/example_configs.yaml \
   --dataset simulated_binary_6_gens_samplingNoise \
-  --verbose True \
   --data_folder examples/example_data/simulated_binary_6_gens_samplingNoise/ \
+  --filenames_data delta_vmax.txt,d_delta_vmax.txt
+  --verbose True \
   --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
   --input_is_sanity_output True \
   --zscore_cutoff 1.0 \
@@ -107,8 +108,7 @@ python3 bonsai/create_config_file.py \
   --nnn_n_randommoves 1000 \
   --nnn_n_randomtrees 2 \
   --pickup_intermediate False \
-  --use_knn 10 \
-  --filenames_data delta.txt,d_delta.txt
+  --use_knn 10
 ```
 *See the Section [Possible run configurations](https://github.com/dhdegroot/Bonsai-data-representation/blob/main/README.md#possible-run-configurations) for information on the different configurations that you can change. **For first usage, one only needs to customize the configurations `dataset`, `data_folder`, `filenames_data`, `results_folder`, `input_is_sanity_output`. The other configurations are only required for advanced usage.***
 
