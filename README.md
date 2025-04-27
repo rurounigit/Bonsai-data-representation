@@ -1,12 +1,10 @@
-# *Bonsai*-development
-Algorithm to reconstruct the maximum likelihood cell-tree from single-cell data.
+# *Bonsai*-data-representation
+Algorithm to create an accurate and interpretable data-representation by reconstructing the maximum likelihood cell-tree from single-cell data, and visualizing this using the *Bonsai-scout* app.
 
 ## Input
-The *Bonsai* tree-reconstruction was originally designed for the analysis of single-cell RNA-sequencing data, but can be used on any high-dimensional single-cell dataset where there are reliable estimates of the means and error-bars of the different data-features, and where Euclidean distance is, at least to first approximation, a reasonable estimate of the observation's dissimilarity. 
+The *Bonsai* tree-reconstruction was originally designed for the analysis of single-cell RNA-sequencing data, but can be used on any high-dimensional dataset that contains objects with with high-dimensional feature vectors. *Bonsai* needs to be provided with a vector of the most likely feature-values for each object, and takes into account standard-deviations on these feature estimates if provided, see the *Bonsai*-publication for details.
 
-When using *Bonsai* for scRNAseq-data, we highly recommend to use *Sanity* for processing of the raw counts [Sanity's GitHub-page](https://github.com/jmbreda/Sanity), or, in the near future, use our pipeline on [Swiss Regulon](https://swissregulon.unibas.ch/pages/).
-
-If running *Bonsai* after *Sanity*, ***Bonsai* just requires the files in the output-directory created by *Sanity***. If running *Bonsai* based on other data, read the Section on [Running *Bonsai* on other data-types](https://github.com/dhdegroot/bonsai-development#running-bonsai-on-other-data-types).
+When using *Bonsai* for scRNAseq-data, we highly recommend using *Sanity* for processing of the raw counts [Sanity's GitHub-page](https://github.com/jmbreda/Sanity), or to upload your data to our [single-cell pipeline](https://bonsai.unibas.ch). If running *Bonsai* after *Sanity*, ***Bonsai* just requires the files in the output-directory created by *Sanity***, and can be run with the argument `--input_is_sanity_output True`. If running *Bonsai* based on other data, read the Section on [Running *Bonsai* on other data-types](https://github.com/dhdegroot/bonsai-development#running-bonsai-on-other-data-types).
 
 ## Installing *Bonsai*
 * Clone the GitHub repository:
@@ -138,6 +136,14 @@ The results will be stored in the results-folder as indicated in the .yaml-file.
   - Third, the files `posterior_ltqs_vertByGene.npy` and `posterior_ltqsVars_vertByGene.npy` contain the inferred gene-expression values for all nodes, i.e. also the internal nodes, when we have marginalized over all other node positions. These values thus really indicate our best guess of the gene expression levels in that node. These data could be reconstructed from the original data as well, but storing it here in a binary-format saves time when we want to visualize the tree with the data.
 * several subdirectories starting with `intermediate_bonsai_`. In these folders, the state of the reconstructed tree is stored as it was after the different steps in the *Bonsai* reconstruction algorithm. These directories are very useful when one wants to run only part of the *Bonsai*-algorithm again from one of the intermediate steps, for example when the run failed due to running out of time or memory. Since the data-files `..._vertByGene.npy` are removed from these subdirectories, the memory footprint of these folders is small. Still, one may choose to remove these directories when the full *Bonsai* run has completed.
 * a copy of the configuration YAML-file with an added timestamp. In this way, one can always see with what parameters the results were created, and when this run was started.
+
+## Running Bonsai on other data-types
+### Minimally required files
+*Bonsai* minimally requires two data-files
+* `means.txt`
+* `stds.txt`
+
+### TO BE CONTINUED
 
 ## Visualizing the *Bonsai* results
 The reconstructed tree can be visualized in the Shiny-app that was developed for this. 
@@ -332,11 +338,3 @@ srun python -m mpi4py ${PATH_TO_CODE}/bonsai/bonsai_main.py --config_filepath ${
 
 ### TO BE CONTINUED
 For now, you can read the extensive comments in your YAML-config file or in the create_config_file.py-script. This is all you need, and more.
-
-## Running Bonsai on other data-types
-### Minimally required files
-*Bonsai* minimally requires two data-files
-* `means.txt`
-* `stds.txt`
-
-### TO BE CONTINUED
