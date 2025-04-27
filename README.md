@@ -172,7 +172,7 @@ Before running the app, we must first do a preprocessing run, using (from "Bonsa
 ```
 python3 bonsai_scout/bonsai_scout_preprocess.py \
 --results_folder <BONSAI_RESULTS_FOLDER> \
---annotation_path <PATH_TO_CELL_ANNOTATION_FILE> \
+--annotation_path <PATH_TO_CELL_ANNOTATION_FOLDER> \
 --take_all_genes False \
 --config_filepath ''
 ```
@@ -195,7 +195,7 @@ The preprocessing step will create two files and store them in the *Bonsai* resu
 ### Running the shiny app
 Now you can view your results in *Bonsai*'s Shiny app by running (from the "Bonsai-data-representation"-directory)
 ```
-python3 bonsai_scout/run_shiny_bonsai.py \
+python3 bonsai_scout/run_bonsai_scout_app.py \
 --results_folder <BONSAI_RESULTS_FOLDER> \
 --settings_filename bonsai_vis_settings.json
 ```
@@ -241,7 +241,7 @@ Now run the preprocessing of the visualization:
 ```
 python3 bonsai_scout/bonsai_scout_preprocess.py \
   --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
-  --annotation_path examples/example_data/simulated_binary_6_gens_samplingNoise/celltype_annotation.csv \
+  --annotation_path examples/example_data/simulated_binary_6_gens_samplingNoise/annotation \
   --take_all_genes False \
   --config_filepath ''
 ```
@@ -251,6 +251,7 @@ python3 bonsai_scout/run_bonsai_scout_app.py \
 --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
 --settings_filename bonsai_vis_settings.json
 ```
+
 There should now be a print message pointing you to the correct link: 
 ```Your app will shortly be running at: http://0.0.0.0:8243. Use your browser (not Safari) to view it.```
 
