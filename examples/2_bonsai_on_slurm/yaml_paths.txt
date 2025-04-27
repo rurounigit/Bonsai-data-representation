@@ -1,1 +1,1 @@
-/scicore/home/nimwegen/degroo0000/Bonsai-data-representation/examples/new_yaml.yaml
+examples/1_simple_example/example_configs.yaml
