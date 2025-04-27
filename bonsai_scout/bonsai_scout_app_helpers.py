@@ -19,7 +19,7 @@ logging.getLogger("websockets").setLevel(logging.WARNING)
 TEMP_MASK_STEPS = 10
 TEMP_MASK_SECS = 3
 
-from bonsai_scout.vis_bonsai_helpers import Bonvis_figure, Bonvis_settings, Bonvis_metadata
+from bonsai_scout.bonsai_scout_helpers import Bonvis_figure, Bonvis_settings, Bonvis_metadata
 from bonsai.bonsai_helpers import set_recursion_limits
 
 def store_current_settings(bonvis_settings, settings_path):
