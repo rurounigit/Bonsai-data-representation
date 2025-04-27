@@ -347,7 +347,56 @@ PATH_TO_CODE="<PATH_TO_BONSAI_DATA_REPRESENTATION_FOLDER>"
 srun python -m mpi4py ${PATH_TO_CODE}/bonsai/bonsai_main.py --config_filepath ${YAML_PATH} --step ${STEP}
 ```
 
-## Possible run configurations
+## Detailed description of the run configurations
+As described above, one can set *Bonsai*'s run configuration using the provided `bonsai/create_config_file.py` that uses a template YAML-config file. This script already contains extensive comments that explain the different configurations, but for completeness we also describe the different configurations here.
 
-### TO BE CONTINUED
-For now, you can read the extensive comments in your YAML-config file or in the create_config_file.py-script. This is all you need, and more.
+### Specifying the input
+* `--dataset [str, required]`:
+Identifier of dataset.
+* `--data_folder [str, default='']`:
+Path (absolute or relative to "bonsai-development") to folder where input data can be found. If `--input_is_sanity_output True`, this folder should be the output-folder of _Sanity_, otherwise, this folder should contain a file with means and standard-deviations in files pointed to by the argument `--filenames_data`.
+* `--filenames_data [str, default=delta.txt,d_delta.txt]`:
+Filenames of input-files for features and standard deviations separated by a comma. These files should have different cells as columns, and features (such as log transcription quotients) as rows.
+* `--results_folder [str, default='']`:
+Path (absolute or relative to "bonsai-development") to folder where results will be stored.
+* `--input_is_sanity_output [bool, default=true]`:
+The provided means and stds by *Sanity* are the means and stds of the posterior for the feature: P(x | D), but in Bonsai we need the probability of the data given the feature value: P(D | x). These are related through P(x | D) ~ P(D | x) P(x). So, we need to divide out the prior. If the input is Sanity-output we know how to do this because the reported posterior is Gaussian and the prior was Gaussian around zero (see the SI of the Bonsai-publication). If your input-data is not Sanity-output, set this flag to False, but make sure to provide *Bonsai* with the required means and standard-deviations of the likelihood (P(D | x)).
+
+### Run parameters
+* `--zscore_cutoff [float, default=1]`:
+Genes with a signal-to-noise ratio under this cutoff will be dropped. Negative means: keep all. Due to the large number of genes dominated by noise, tree-reconstruction is usually better when we discard the most noisy genes, even though we account for error-bars rigorously. The signal-to-noise ratio is defined as: z_g = frac{1}{C} sum_c frac{(delta_{gc} - bar{delta_g})^2}{epsilon_{gc}^2} where delta_{gc} are the posterior-means for gene g and cell c, and epsilon_{gc} is the standard-deviation on the posterior. If `--input_is_sanity_output` is false, these posterior values are derived from the provided features and standard-deviations by _Bonsai_, otherwise we use the *Sanity* output directly.
+* `--rescale_by_var [bool, default=True]`:
+This determines whether coordinates are rescaled by the inferred variance per gene (feature). by default *Bonsai* uses a prior where the amount of diffusion in dimension `g` is assumed proportional to the variance, `v_g` in that dimension. However, if desired the user can specify to not scale the prior by the variances $v_g$.
+
+### Optional preprocessing
+* `--tmp_folder [str, default='']`: (ADVANCED)
+Path (absolute path or relative to "bonsai-development") pointing to a tree-folder from which Bonsai reconstruction will start. This is relevant if one wants to start from a tree other than the usual star-tree, for example if one already created a tree-object where [cellstates](https://github.com/nimwegenLab/cellstates) were connected to a common ancestor. This can lead to significant speed-up and to better tree reconstructions. For using Cellstates-output to create this initial tree, we provide a script `Bonsai-data-representation/optional_preprocessing/create_cellstates_premerged_tree.py` that can take the same YAML-config file as *Bonsai* and *Cellstates*-output, and creates the desired tree in a folder. The path to the created folder can be used in this argument.
+
+### Computational optimization parameters
+* `--nnn_n_randomtrees [int, default=10]`: (ADVANCED)
+Decides how many random trees we create before taking the tree with the highest loglikelihood and doing nearest-neighbor interchanges greedily. Since we parallelized this procedure over the number of random trees, it never hurts to set nnn_n_randomtrees equal to the number of cores that are anyhow reserved, since then the different random trees will be created in parallel. Increasing this number can lead to moderate increases in the likelihood of the final *Bonsai*-tree, but will come at significant computational cost.
+
+* `--nnn_n_randommoves [int, default=1000]`: (ADVANCED)
+Decides how many random nearest-neighbor-interchange-moves we do before doing them greedily. Increasing this number can lead to moderate increases in the likelihood of the final *Bonsai*-tree, but will come at significant computational cost.
+
+* `--use_knn` [int, default=10]: (ADVANCED)
+Decides whether nearest-neighbours are used to get candidate pairs to merge. Set to -1 for considering all pairs of leafs. Values between 5 and 20 give good results. Computation time will scale approximately linear with `--use_knn`, while tests show that the tree likelihood will increase only slightly with this parameter.
+
+* `--UB_ellipsoid_size [float, default=1.0]`: (ADVANCED)
+This is a purely computational optimization that does not affect the final result. Decides whether we calculate an upper bound (UB) for the increase in loglikelihood that merging a certain pair can yield, given that a the root stays in a certain ellipsoid. Using these upper bounds, the calculation can be sped up enormously. If the UB_ellipsoid_size < 0, this estimation will not be used. Note that this will not lead to a different final tree, so we recommend not using that setting. Otherwise, it decides how large the ellipsoid is in root-position/precision space for which we estimate the UB. Larger values will result in looser UB, so that more candidate pairs per merge have to be considered. However, it will also result in longer validity of the UB-estimation, so that more merges can be done without re-calculating the upper bounds. Ellipsoid sizes below 5 are reasonable to try, we recommend to start at 1. Ellipsoid size will be updated dynamically by Bonsai based on the results.
+
+### Starting from the intermediate results of previous runs
+The main Bonsai calculation takes the 4 below steps. After each step, the current tree will be stored in the results-folder. Therefore, if Bonsai fails (or runs out of time) in some step, it can be picked up from the end-result of the previous step. In that case, set skip_<step> of all previous steps to true. (Skipping these steps will only work when `bonsai/bonsai_main.py` is run with `--step core_calc`, and not with `--step all`).
+* greedy_merging: greedily merging pairs starting from the star-tree
+* redo_starry: detecting nodes that still have more than 2 children, and checking if more merges can be done
+* opt_times: optimizing all branch length simultaneously once
+* nnn_reordering: taking any edge and interchanging children of the two connected nodes
+
+* `--pickup_intermediate [bool, default=false]`: (ADVANCED)
+Decides whether we look for intermediate results from previous runs or not. These intermediate results are periodically stored during any normal run, and can thus be used when a run did not finalize. (Note that this parameter does not mean we automatically skip over one or several of the four main steps of *Bonsai*, but will look for intermediate results within the first step where you re-start *Bonsai*.
+
+## Optional downstream analyses
+In *Bonsai-scout*, we, next to interactive visualization, offer 1) tree-based clustering, 2) marker gene/feature detection, and 3) calculating the average features for different groups. The necessary code is provided in the `downstream_analyses`-subfolder. 
+* Tree-based clustering. One can use the function `get_min_pdists_clustering_from_nwk_str_new` in the file `get_clusters_max_diameter.py` to perform minimal-distance clustering based on a tree given by a Newick-string. These clusters are also provided in *Bonsai-scout* and can there be downloaded by clicking the correct button.
+* Calculating marker genes. See the Methods-section of the *Bonsai*-publication for an extensive description of the marker gene calculation. The marker genes can be calculated in *Bonsai-scout*, but for large datasets this calculation can take too long. In that case, one can download the necessary information on the selected groups in a `.json`-file. This `.json`-file can be used to run `calc_marker_genes.py`.
+* Averaging over groups. Given a group of objects and the posterior feature-values (including error-bars) that *Bonsai* has calculated, one can use `average_over_groups_wrapper.py` to calculate the group's mean feature value and the group variance. Note that this can deviate from the naive mean and variance, because this script takes into account the uncertainty on the inferred feature values.
