@@ -1261,7 +1261,7 @@ class Bonvis_figure:
         cluster_colors = get_celltype_colors_new(n_clusters, colortype=colortype)
         annot_to_color = {cat: cluster_colors(ind) for ind, cat in enumerate(cats)}
         cbar_info = {'cmap': None, 'vmin': None, 'vmax': None, 'log': None}
-        if min_pdists:
+        if min_pdists or footfall:
             label = "Cluster_n={}".format(cluster_param)  # TODO change this
             info_key = "annot_cl_n={}".format(cluster_param)  # TODO?
         else:
