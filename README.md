@@ -135,17 +135,21 @@ The results will be stored in the results-folder as indicated in the .yaml-file.
     - `edgeInfo.txt` contains three columns, and every row defines an edge in the tree. The first two columns indicate the `vertInd` (vertex-index) of the vertices connected by the edge, the third column indicates the length of the edge
     - `vertInfo.txt` contains for each vertex its `vertInd` and its `vertName`. The `vertName` is important for coupling the original single-cell data to the tree. The column `nodeInd` is a historical artefact, and its usage will be removed in the near future.
     - `metadata.json` contains some metadata on the dataset, importantly, it also contains a path to in what folder the original gene expression data can be found.
-  - Third, the files `posterior_ltqs_vertByGene.npy` and `posterior_ltqsVars_vertByGene.npy` contain the inferred gene-expression values for all nodes, i.e. also the internal nodes, when we have marginalized over all other node positions. These values thus really indicate our best guess of the gene expression levels in that node. These data could be reconstructed from the original data as well, but storing it here in a binary-format saves time when we want to visualize the tree with the data.
+  - Third, the files `posterior_ltqs_vertByGene.npy` and `posterior_ltqsVars_vertByGene.npy` contain the inferred gene-expression values for all nodes, i.e. also the internal nodes, when we have marginalized over all other node positions. These values thus really indicate our best guess of the gene expression levels in that node. Given the reconstructed tree, these data can be always be reconstructed from the original data, but storing it here in a binary-format saves time when we want to visualize the tree with the data.
 * several subdirectories starting with `intermediate_bonsai_`. In these folders, the state of the reconstructed tree is stored as it was after the different steps in the *Bonsai* reconstruction algorithm. These directories are very useful when one wants to run only part of the *Bonsai*-algorithm again from one of the intermediate steps, for example when the run failed due to running out of time or memory. Since the data-files `..._vertByGene.npy` are removed from these subdirectories, the memory footprint of these folders is small. Still, one may choose to remove these directories when the full *Bonsai* run has completed.
-* a copy of the configuration YAML-file with an added timestamp. In this way, one can always see with what parameters the results were created, and when this run was started.
+* a copy of the configuration YAML-file with an added timestamp. In this way, one can always see with what running configurations the results were created, and when this run was started.
 
 ## Running Bonsai on other data-types
-### Minimally required files
-*Bonsai* minimally requires two data-files
-* `means.txt`
-* `stds.txt`
 
-### TO BE CONTINUED
+### The required files
+To use *Bonsai* on a general dataset that contains $C$ objects in an $G$-dimensional feature space, we need to provide it with:
+* `features.txt`: This should be a tab-separated file containing a matrix with $G$ rows and $C$ columns. The file should only contain the data, no header or index. Column $i$ should give the best estimates of the feature values for object $i$. 
+* (optional) `standard_deviations.txt`: This should be a tab-separated file containing a matrix with $G$ rows and $C$ columns. The file should only contain the data, no header or index. Column $i$ should give standard deviations corresponding to the measurement noise on the features, i.e., they should give the uncertainty on the feature values provided in `features.txt`. If `standard_deviations.txt` is not provided, *Bonsai* will assume that the uncertainty on the feature values is very small.
+* (optional) `cellID.txt`: Here, one can provide IDs for the objects. This should be a simple text file with on each row an object-ID corresponding to the columns in `features.txt`.
+* (optional) `geneID.txt`: Here, one can provide IDs for the features. This should be a simple text file with on each row a feature-ID corresponding to the rows in `features.txt`.
+
+### The Bonsai running configurations for general data types
+
 
 ## *Bonsai-scout*: Visualizing the *Bonsai* results
 The reconstructed tree can be visualized in the Bonsai-scout-app that was developed for this. 
@@ -224,7 +228,7 @@ You can open the YAML-file and see how the parameters are set. Also, please read
 We can now move to running *Bonsai*:
 ```
 python3 bonsai/bonsai_main.py \
- --config_filepath examples/new_yaml.yaml \
+ --config_filepath examples/1_simple_example/example_configs.yaml \
  --step all
 ```
 This can take a few minutes. At the moment there is still a lot of output printed, that gives an idea of the progress of *Bonsai. We will clean up this output in the future.
