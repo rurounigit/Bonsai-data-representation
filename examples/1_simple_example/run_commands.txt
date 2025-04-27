@@ -1,0 +1,9 @@
+# To prepare the YAML-file with running configurations the first option is to copy the file from the template. From the directory "bonsai-development/examples/1_simple_example" one can run:
+cp ../../bonsai/config_template_do_not_change/config_template.yaml new_yaml.yaml
+# Then open the "new_yaml.yaml"-file and adapt the arguments. For a new dataset, it is usually only necessary to set the arguments: "dataset", "data_folder", "filenames_data", "results_folder", "input_is_sanity_output".
+
+# Alternatively, run a script to create the configurations file and give the desired configurations as arguments. For example, from the directory "bonsai-development/examples/1_simple_example" one can run (note that all paths should be either absolute or relative to the "bonsai-development"-folder):
+python3 ../../bonsai/create_config_file.py --new_yaml_path examples/1_simple_example/new_yaml.yaml --dataset simulated_binary_6_gens_samplingNoise --verbose True --data_folder examples/1_simple_example/data/simulated_binary_6_gens_samplingNoise/ --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ --input_is_sanity_output True --zscore_cutoff 1.0 --UB_ellipsoid_size 1.0 --skip_greedy_merging False --skip_redo_starry False --skip_opt_times False --skip_nnn_reordering False --nnn_n_randommoves 1000 --nnn_n_randomtrees 2 --pickup_intermediate False --use_knn 5 --filenames_data delta.txt,d_delta.txt
+
+# Now we have the configurations-file, so we are ready to run Bonsai. It now takes only a single argument, which is the path to the configurations-file. From the "1_simple_example"-directory, one can run:
+python3 ../../bonsai/bonsai_main.py --config_filepath examples/1_simple_example/new_yaml.yaml
