@@ -4,8 +4,11 @@ import pandas as pd
 import os
 
 import sys
-sys.path.append("/scicore/home/nimwegen/morill0000/software/waddington-code-github/useful_scripts_not_bonsai/sarah_scripts")
-from run_averaging import run_averaging
+parent_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+# Add the parent directory to sys.path
+print(parent_dir)
+sys.path.append(parent_dir)
+from downstream_analyses.average_over_groups import run_averaging
 
 
 def str2bool(v):
@@ -47,7 +50,6 @@ if __name__ == '__main__':
                         help='Path to the folder where output should be stored')
     parser.add_argument('-read_ids_from_file', type=str2bool, default=False,
                         help='If this is true, the script assumes that the -x and -ue contain header and index')
-
 
     args = parser.parse_args()
 

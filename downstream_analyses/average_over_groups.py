@@ -5,7 +5,6 @@ import scipy.optimize as so
 import sys
 
 
-
 def find_tau(activities, variances):
     """ finds tau """
     (tau, fval, ierr, numfunc) = so.fminbound(log_likelihood, 0, 10000,
@@ -32,7 +31,6 @@ def log_likelihood(t, activities, variances):
     mu = m1 / m0
     #return (0.5 * (m0 * mu * mu - 2 * mu * m1 + m2) - np.log(mSqrt))
     return (0.5 * (m0 * mu * mu - 2 * mu * m1 + m2) - 0.5*np.sum(np.log(alpha)))
-
 
 
 def run_averaging(activities, deltas, clusters, wms):
@@ -75,7 +73,4 @@ def run_averaging(activities, deltas, clusters, wms):
     # recalculate Z-values
     zvals = avg_activities / avg_deltas
     significance = np.sqrt((zvals**2).sum(axis=0) / len(clusters.keys()))
-    
-    
-    
     return avg_activities, avg_deltas, significance.sort_values(ascending=False)
