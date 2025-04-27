@@ -95,7 +95,7 @@ python3 bonsai/create_config_file.py \
   --new_yaml_path examples/1_simple_example/example_configs.yaml \
   --dataset simulated_binary_6_gens_samplingNoise \
   --data_folder examples/example_data/simulated_binary_6_gens_samplingNoise/ \
-  --filenames_data delta_vmax.txt,d_delta_vmax.txt
+  --filenames_data delta_vmax.txt,d_delta_vmax.txt \
   --verbose True \
   --results_folder examples/1_simple_example/results/simulated_binary_6_gens_samplingNoise/ \
   --input_is_sanity_output True \
