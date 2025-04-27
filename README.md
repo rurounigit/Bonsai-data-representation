@@ -4,12 +4,12 @@ Algorithm to create an accurate and interpretable data-representation by reconst
 ## Input
 The *Bonsai* tree-reconstruction was originally designed for the analysis of single-cell RNA-sequencing data, but can be used on any high-dimensional dataset that contains objects with with high-dimensional feature vectors. *Bonsai* needs to be provided with a vector of the most likely feature-values for each object, and takes into account standard-deviations on these feature estimates if provided, see the *Bonsai*-publication for details.
 
-When using *Bonsai* for scRNAseq-data, we highly recommend using *Sanity* for processing of the raw counts [Sanity's GitHub-page](https://github.com/jmbreda/Sanity), or to upload your data to our [single-cell pipeline](https://bonsai.unibas.ch). If running *Bonsai* after *Sanity*, ***Bonsai* just requires the files in the output-directory created by *Sanity***, and can be run with the argument `--input_is_sanity_output True`. If running *Bonsai* based on other data, read the Section on [Running *Bonsai* on other data-types](https://github.com/dhdegroot/bonsai-development#running-bonsai-on-other-data-types).
+When using *Bonsai* for scRNAseq-data, we highly recommend using *Sanity* for processing of the raw counts [Sanity's GitHub-page](https://github.com/jmbreda/Sanity), or to upload your data to our [single-cell pipeline](https://bonsai.unibas.ch). If running *Bonsai* after *Sanity*, ***Bonsai* just requires the files in the output-directory created by *Sanity***, and can be run with the argument `--input_is_sanity_output True`. If running *Bonsai* based on other data, read the Section on [Running *Bonsai* on other data-types](https://github.com/dhdegroot/Bonsai-data-representation#running-bonsai-on-other-data-types).
 
 ## Installing *Bonsai*
 * Clone the GitHub repository:
 ```
-git clone https://github.com/dhdegroot/bonsai-development.git
+git clone https://github.com/dhdegroot/Bonsai-data-representation.git
 ```
 
 * Create a conda environment:
@@ -19,7 +19,7 @@ conda activate bonsai
 ```
 
 * Install mpi4py
-For bigger datasets (~1000 cells and larger), we recommend running *Bonsai* using parallel computation. In that case, one needs to install *mpi4py* and therefore an underlying installation of *OpenMPI*. 
+For bigger datasets (~2000 cells and larger), we recommend running *Bonsai* using parallel computation. In that case, one needs to install *mpi4py* and therefore an underlying installation of *OpenMPI*. 
 For running *Bonsai* on a computing cluster, see the below information on [Installing *mpi4py* on an HPC Cluster](https://github.com/dhdegroot/bonsai-development/blob/main/README.md#installing-openmpi-on-an-hpc-cluster). Running parallel computation on your personal computer will only lead to modest speed-up, but documentation for installing mpi4py can be found at [mpi4py GitHub](https://github.com/mpi4py/mpi4py/blob/master/INSTALL.rst).
 Important note: Even with a failed installation of *mpi4py*, *Bonsai* will run, but it will only make use of 1 computing core.
 
