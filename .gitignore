@@ -132,7 +132,8 @@ dmypy.json
 *.toc
 
 # Added by Daan
-data/
+data/*
+results/*
 examples/1_simple_example/results/*
 
 .idea/Bonsai-data-representation.iml
