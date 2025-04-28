@@ -4,8 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from datetime import datetime
 
-scaling_df_all = pd.read_csv(
-    '/Users/Daan/Documents/postdoc/bonsai-development/data/additional_data/timescaling.csv')
+scaling_df_all = pd.read_csv('timescaling.csv')
 # n_cores_per_node_list = [10, 20]
 n_cores_per_node_list = [20]
 n_cores_opts = len(n_cores_per_node_list)
@@ -34,7 +33,7 @@ for n_cores_ind, n_cores_per_node in enumerate(n_cores_per_node_list):
     max_memories = scaling_df['max_memory_GB']
 
     """Make timescaling plot for core-computation time only."""
-    figure_folder = '/Users/Daan/Documents/postdoc/bonsai-development/useful_scripts_not_bonsai/timescaling_checks/figures'
+    figure_folder = 'figures'
 
     skip_first_n = 3
     n_cells_corr = np.log(n_cells)[skip_first_n:]
@@ -95,8 +94,8 @@ for n_cores_ind, n_cores_per_node in enumerate(n_cores_per_node_list):
         ax.set_xlabel("Number of cells")
         ax.set_ylabel("Compute time (seconds) \n normalized per 2000 genes.")
         ax.set_title(r'Fitted scaling: $T \sim {%.4f}|C|^{%.2f}$' % (prefactor, slopepca1log))
-        plt.savefig(os.path.join(figure_folder, 'total_compute_scaling.png'), dpi=300)
-        plt.savefig(os.path.join(figure_folder, 'total_compute_scaling.svg'))
+        # plt.savefig(os.path.join(figure_folder, 'total_compute_scaling.png'), dpi=300)
+        # plt.savefig(os.path.join(figure_folder, 'total_compute_scaling.svg'))
 
     """Make plot for max memory usage as well"""
     n_cells_corr = np.log(n_cells)[skip_first_n:]
@@ -121,7 +120,7 @@ for n_cores_ind, n_cores_per_node in enumerate(n_cores_per_node_list):
         ax.set_xlabel("Number of cells")
         ax.set_ylabel("Maximal memory used by a single CPU")
         ax.set_title(r'Fitted scaling: $M \propto |C|^{%.2f}$' % slopepca1log)
-        plt.savefig(os.path.join(figure_folder, 'memory_scaling.png'), dpi=300)
-        plt.savefig(os.path.join(figure_folder, 'memory_scaling.svg'))
+        # plt.savefig(os.path.join(figure_folder, 'memory_scaling.png'), dpi=300)
+        # plt.savefig(os.path.join(figure_folder, 'memory_scaling.svg'))
 
 plt.show()
