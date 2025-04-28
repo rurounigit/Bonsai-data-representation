@@ -102,7 +102,7 @@ for gene_num in num_dims_list:
                    '--input_is_sanity_output',
                    'False',
                    '--zscore_cutoff',
-                   '1.0',
+                   '-1',
                    '--UB_ellipsoid_size',
                    '1.0',
                    '--skip_greedy_merging',
