@@ -410,14 +410,24 @@ edge_df.to_hdf(scData.result_path('bonsai_vis_data.hdf'), key='tree_info/edge_df
                data_columns=True)
 
 # Get the first 100 clusters on the tree
+node_id_to_n_cells = {}
+node_ids_with_cells = []
+vert_ind_to_node_id = {}
+for ind, node_id in enumerate(node_ids):
+    node_id_to_n_cells[node_id] = vert_n_cells[ind]
+    vert_ind_to_node_id[ind] = node_id
+    if vert_n_cells[ind] > 0:
+        node_ids_with_cells.append(node_id)
 node_id_to_n_cells = {node_id: vert_n_cells[ind] for ind, node_id in enumerate(node_ids)}
 all_clusterings, cut_edges = get_min_pdists_clustering_from_nwk_str_new(tree_nwk_str=nwk_str, n_clusters=100,
-                                                                    cell_ids=metadata_dict['csIds'],
-                                                                    node_id_to_n_cells=node_id_to_n_cells)
+                                                                        cell_ids=node_ids_with_cells,
+                                                                        node_id_to_n_cells=node_id_to_n_cells)
 
 # all_clusterings is a dictionary with keys 'Cluster_n=..' and as vals lists of lists of cs-IDs which give the clusters
 # We need to convert this into a pandas dataframe with index the cs_ids and entries the cluster-assignments as "cl_{}"
-cl_df = get_cluster_assignments_new(all_clusterings=all_clusterings)
+node_ids_multiple_cs_ids = {vert_ind_to_node_id[vert_ind]: [scData.metadata.csIds[cs_ind] for cs_ind in cs_inds] for
+                            vert_ind, cs_inds in scData.vertIndToCsInds.items() if len(cs_inds) > 1}
+cl_df = get_cluster_assignments_new(all_clusterings=all_clusterings, node_ids_multiple_cs_ids=node_ids_multiple_cs_ids)
 cl_df = cl_df.loc[metadata_dict['csIds']]
 
 cl_df.to_hdf(scData.result_path('bonsai_vis_data.hdf'), key='cs_info/cluster_info_dict', mode='a', format='table',

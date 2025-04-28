@@ -38,13 +38,17 @@ def get_cluster_assignments(clusters_list, assign_singlets_together=False):
     return cl_dict
 
 
-def get_cluster_assignments_new(all_clusterings):
+def get_cluster_assignments_new(all_clusterings, node_ids_multiple_cs_ids={}):
     cluster_assignments = {}
     # Create dictionary with dictionaries for each cs-ID, containing for each clustering in which cluster it falls
     for label, clusters in all_clusterings.items():
         for cluster_index, ids in enumerate(clusters):
             for id_ in ids:
-                cluster_assignments.setdefault(id_, {})[label] = f"cl_{cluster_index}"
+                if id_ in node_ids_multiple_cs_ids:
+                    for cs_id in node_ids_multiple_cs_ids[id_]:
+                        cluster_assignments.setdefault(cs_id, {})[label] = f"cl_{cluster_index}"
+                else:
+                    cluster_assignments.setdefault(id_, {})[label] = f"cl_{cluster_index}"
 
     df = pd.DataFrame.from_dict(cluster_assignments, orient="index")
     df = df.sort_index()

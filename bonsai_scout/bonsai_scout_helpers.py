@@ -215,7 +215,7 @@ class Verttype_info:
             n_cells_per_vert = vert_info_dict['n_cells_per_vert']
             self.new_cell_info_dict['cell_number'] = n_cells_per_vert
             # cats = natsorted(list(np.unique(n_cells_per_vert)))
-            cbar_info = {'cmap': cmap, 'vmin': 0, 'vmax': max(int(n_cells_per_vert.max()), 2), 'log': False}
+            cbar_info = {'cmap': cmap, 'vmin': 1, 'vmax': max(int(np.nanmax(n_cells_per_vert)), 2), 'log': False}
             self.annot_infos['cell_number'] = Annotation_info(cats=None, annot_to_color=None, label='Number of cells',
                                                               cbar_info=cbar_info, annot_type='verts',
                                                               color_type='sequential', info_object='new_cell_info_dict',
@@ -224,7 +224,7 @@ class Verttype_info:
             # Also add the default sizing
             self.annot_alts.append('binarized_cell_number')
             self.new_cell_info_dict['binarized_cell_number'] = np.minimum(n_cells_per_vert, 1)
-            cbar_info = {'cmap': cmap, 'vmin': 0, 'vmax': max(int(n_cells_per_vert.max()), 2), 'log': False}
+            cbar_info = {'cmap': cmap, 'vmin': 1, 'vmax': max(int(np.nanmax(n_cells_per_vert)), 2), 'log': False}
             self.annot_infos['binarized_cell_number'] = Annotation_info(cats=None, annot_to_color=None,
                                                                         label='Default sizing',
                                                                         cbar_info=cbar_info, annot_type='verts',
@@ -836,19 +836,24 @@ class Bonvis_figure:
                     (cs_to_size_non_nan - min_cell_size) / (max_cell_size - min_cell_size)) * (max_rescaling - 1))
             vert_to_size[cs_to_vert] = norm_size
         elif size_annot_info.info_object == 'new_cell_info_dict':
+            # This holds only the number of cells at the moment. Don't do calculations including the zeros of the non-cell-nodes
             vert_to_size_raw = self.bonvis_settings.verttype_info.new_cell_info_dict[size_annot]
-            max_vert_size = vert_to_size_raw.max()
-            min_vert_size = vert_to_size_raw.min()
-            if len(np.unique(vert_to_size_raw)) == 2:
-                max_rescaling = 1
-            if max_vert_size != min_vert_size:
-                vert_to_size = radius_internal * (1 + np.sqrt(
-                    (vert_to_size_raw - min_vert_size) / (max_vert_size - min_vert_size)) * (
-                                                          max_rescaling * node_style[
-                                                      'radius_cell'] / radius_internal - 1))
+            vert_to_size = np.ones(self.bonvis_metadata.n_nodes) * radius_internal
 
+            non_int_vert_to_size = vert_to_size_raw[self.bonvis_metadata.cell_info['non_int_vert_inds']]
+            max_vert_size = np.max(non_int_vert_to_size)
+            min_vert_size = np.min(non_int_vert_to_size)
+            if max_vert_size < 8:
+                max_rescaling = 1.5
+            # if len(np.unique(vert_to_size_raw)) == 2:
+            #     max_rescaling = 1
+            if max_vert_size != min_vert_size:
+                vert_to_size[self.bonvis_metadata.cell_info['non_int_vert_inds']] = node_style['radius_cell'] * (
+                            1 + np.sqrt(
+                        (non_int_vert_to_size - min_vert_size) / (max_vert_size - min_vert_size)) * (max_rescaling - 1))
             else:
-                vert_to_size = np.ones_like(vert_to_size_raw) * radius_internal
+                vert_to_size[self.bonvis_metadata.cell_info['non_int_vert_inds']] = np.ones_like(non_int_vert_to_size) * \
+                                                                                    node_style['radius_cell']
         elif size_annot_info.info_object == 'vert_info_dict':
             vert_info_dict = self.bonvis_metadata.vert_info
             vert_to_size_raw = vert_info_dict[size_annot]
