@@ -139,3 +139,5 @@ examples/1_simple_example/results/*
 .idea/Bonsai-data-representation.iml
 *.png
 *.svg
+*.npy
+useful_scripts_not_bonsai/simulating_datasets/analyzing_simulated_datasets/results/*
