@@ -2,12 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-#@title Growth of single-cell RNA-seq
-papers = pd.read_csv('/Users/Daan/Documents/postdoc/bonsai-development/data/additional_data/Single_cell_studies_database_data.tsv', sep='\t')
-# converts string to date format, can only be run once!
+papers = pd.read_csv('Single_cell_studies_database_data.tsv', sep='\t')
 papers['Datetime'] = pd.to_datetime(papers['Date'], format='%Y%m%d')
 
-# converts string of reported cells total to float, can only be run once!
 papers['Reported cells total'] = papers['Reported cells total'].str.replace(',', '').map(float)
 
 # plot number of studies over time
@@ -26,8 +23,9 @@ ax.set_ylabel("Cumulative number of studies")
 
 # plt.show()
 
-#@title Growth of single-cell tools { run: "auto" }
-tools = pd.read_csv('https://raw.githubusercontent.com/Oshlack/scRNA-tools/master/database/tools.tsv', sep='\t')
+# tools = pd.read_csv('https://raw.githubusercontent.com/Oshlack/scRNA-tools/master/database/tools.tsv', sep='\t')
+tools = pd.read_csv('tools.tsv', sep='\t')
+# tools.to_csv('tools.tsv', sep='\t')
 tools["Datetime"] = pd.to_datetime(tools["Added"])
 tools = tools.sort_values("Added")
 tools["count"] = 1
@@ -42,11 +40,6 @@ ax.set_xlabel("Date")
 ax.set_ylabel("Number of tools")
 ax.tick_params(axis='x', rotation=45)
 
-
-
-# plt.show()
-
-#@title scRNA-seq tools vs. studies linear regression
 date_papers = papers.groupby("Datetime")["count"].sum()
 date_tools = tools.groupby("Datetime")["count"].sum()
 dates = pd.date_range(start='7/26/2002', end='12/31/2023')
@@ -80,7 +73,7 @@ ax.set_xlabel("Cumulative # of scRNA-seq studies")
 ax.set_ylabel("Cumulative # of scRNA-seq tools")
 ax.legend()
 
-plt.savefig("/Users/Daan/Documents/postdoc/bonsai_paper/figures_highres/scaling_datasets_vs_tools.png", dpi=300)
+# plt.savefig("/Users/Daan/Documents/postdoc/bonsai_paper/figures_highres/scaling_datasets_vs_tools.png", dpi=300)
 
 plt.tight_layout()
 plt.show()
