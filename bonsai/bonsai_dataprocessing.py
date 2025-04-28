@@ -1402,6 +1402,10 @@ def nnnReorderRandom(args, outputFolder, verbose=False, randomMoves=0,
                 treeLogliks.update(oneTreeLogliks)
             tasks, logliks = zip(*treeLogliks.items())
             bestTreeInd = np.argmax(logliks)
+            max_rand_loglik = logliks[bestTreeInd]
+            if max_rand_loglik < origLoglik:
+                mp_print("Best random tree still has lower likelihood than the original tree. This is probably normal"
+                         "and desired behavior, but maybe check if something didn't go terribly wrong.", WARNING=True)
             if verbose:
                 mp_print("Taking tree number %d. The random moves increased the loglikelihood from %f to %f." % (
                     tasks[bestTreeInd], origLoglik, logliks[bestTreeInd]), ALL_RANKS=True)

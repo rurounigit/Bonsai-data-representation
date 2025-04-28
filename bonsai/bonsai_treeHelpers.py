@@ -2896,9 +2896,9 @@ class Tree:
         # With these next-nearest-neighbours, re-build the sub-tree, then check if you can improve this sub-tree.
         # This mostUSNode will be the starting point in returning the changed sub-tree in the larger tree. Therefore,
         # we need to store which children of the mostUSNode are being reconfigured, and which are not
-        processYN, tree, usNode, dsNodeCopy, mostUSNode, treeIndToOrigInd, mostUSInfo = self.buildTreeNNN(dsNode,
-                                                                                                          returnMostUSInfo=returnEdgelist,
-                                                                                                          mem_friendly=mem_friendly)
+        processYN, tree, usNode, dsNodeCopy, mostUSNode, \
+                treeIndToOrigInd, mostUSInfo = self.buildTreeNNN(dsNode, returnMostUSInfo=returnEdgelist,
+                                                                 mem_friendly=mem_friendly, random=random)
         if not processYN:
             if returnEdgelist:
                 return None, None, None
@@ -2939,13 +2939,13 @@ class Tree:
         edgeList = mostUSNode.getEdgesComplete([], indMap=treeIndToOrigInd)
         return dsNode.nnnLoglik, edgeList, mostUSInfo
 
-    def buildTreeNNN(self, dsNode, returnMostUSInfo=False, mem_friendly=True):
+    def buildTreeNNN(self, dsNode, returnMostUSInfo=False, mem_friendly=True, random=False):
         dsNeighbours = dsNode.childNodes
         usNode = dsNode.parentNode
         usNeighbours = [node for node in usNode.childNodes if node.nodeInd is not dsNode.nodeInd]
 
         # TODO: Clean this up
-        if (len(dsNeighbours) + len(usNeighbours)) > 30:
+        if (not random) and ((len(dsNeighbours) + len(usNeighbours)) > 30):
             return False, None, None, None, None, None, None
         if mem_friendly:
             dsNode.getAIRootUpstream()
