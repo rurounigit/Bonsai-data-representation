@@ -556,6 +556,11 @@ def server(input, output, session: Session):
                 "For this, we search for features that maximize the probability that, " \
                 "when picking random cells from the two groups, the feature is always higher "
                 "or always lower in the cell from Group 1 than in the cell from Group 2.<br>"),
+            ui.HTML("<em>Bonsai-scout</em> allows for finding marker genes/features that " \
+                    "distinguish two groups of cells/objects. " \
+                    "For this, we search for features that maximize the probability that, " \
+                    "when picking random cells from the two groups, the feature is always higher "
+                    "or always lower in the cell from Group 1 than in the cell from Group 2. <br>"),
             ui.HTML("To find marker features, one first selects which of the feature-types should be used. " \
                 "Then, one needs to select two subsets: by 1) picking a subtree, or 2) picking an annotation-category.<br>" \
                 "If only one subset is picked, the second subset will be all remaining cells by default." \
@@ -563,21 +568,22 @@ def server(input, output, session: Session):
             ui.p(),
             ui.h5("Picking an annotation-category:"),
             ui.HTML("Note that only categories can be picked that are part of the annotation that is " \
-                "currently activated in the 'Annotation'-tab.<br>"),
+                    "currently activated in the 'Annotation'-tab.<br>"
+                    "<em>Note:</em> You can find marker genes on tree-based clusters "
+                    "once you have added a clustering as Annotation in the 'Cluster'-tab."),
             ui.p(),
             ui.h5("Selecting a subtree:"),
-            ui.HTML("One picks a subtree by first selecting the ancestor of the subtree, "
-            "and then any node in the subtree. " \
-            "With the second node, one can thus select on which side of the ancestor we " \
-            "want to select the subtree.<br>" \
-            "Practically, one needs to select a node in the tree, and then click the "
-            "'Ancestor'- or 'Downstream'-button.<br>"),
+            ui.HTML("One picks a subtree by 4 clicks: <br>"
+                    "1. Click the subtree-ancestor in the <em>Bonsai</em>,<br> "
+                    "2. Click the black 'Ancestor'-button in the right sidebar. <br>"
+                    "3. Click any node in the subtree (i.e., downstream of the selected ancestor. <br>"
+                    "4. Click the black 'Downstream'-button in the right sidebar. <br>"),
             ui.p(),
             ui.h5("Testing the selections, and getting the markers:"),
             ui.HTML("The selection can be tested by using the 'Show only subset'-switch.<br>"),
-            ui.HTML("<strong>After selecting the desired subsets, click 'Get markers!' " \
-            "to get the marker features with their scores. Scores are between 0 and 1, " \
-            "where scores indi to 0 or close to 1 indicate strong markers.</strong>"),
+            ui.HTML("<strong>After selecting the desired subsets, click 'Get markers!' "
+                    "to get the marker features with their scores. Scores are between 0 and 1, "
+                    "where scores close to 0 or close to 1 indicate strong markers.</strong>"),
             size="xl",
             easy_close=True,
             fade=True,
