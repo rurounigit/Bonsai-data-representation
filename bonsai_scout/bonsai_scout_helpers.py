@@ -559,7 +559,7 @@ class Bonvis_figure:
         # Create edge collection
         self.get_edge_collection()
 
-        self.create_legend()
+        # self.create_legend()
 
         # self.create_figure()
 
@@ -1188,8 +1188,10 @@ class Bonvis_figure:
             self.update_fig_coords()
         if update_colors:
             self.update_colors()
+        create_legend = False
         if update_colors or update_sizes:
-            self.create_legend()
+            create_legend = True
+        return create_legend
 
     def remove_artists(self):
         if self.is_present['nodes']:

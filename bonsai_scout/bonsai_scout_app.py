@@ -203,7 +203,7 @@ app_ui = ui.page_sidebar(
         # ui.input_action_button("reset", "Reset settings"),
         # 1.3 Store current settings, such that user can start from the current settings
         # ui.input_action_button("store", "Store settings"),
-        open='open',
+        open='always',
     ),
     # Theme code - start
     shinyswatch.theme.minty,
@@ -1182,15 +1182,13 @@ def server(input, output, session: Session):
             if update_figure_kwargs.get() is None:
                 return
             stored_kwargs = update_figure_kwargs.get()
-            bv_objct.bonvis_fig.update_figure(**stored_kwargs)
-            node_style_upd = stored_kwargs['node_style']
+            create_legend = bv_objct.bonvis_fig.update_figure(**stored_kwargs)
             update_figure_kwargs.set(None)
-        if node_style_upd is not None:
-            with reactive.isolate():
-                renew_legend.set(renew_legend.get() + 1)
         bv_objct.bonvis_fig.create_figure()
         # logging.debug("Setting trigger_new_fig higher. Currently {}".format(trigger_new_fig.get()))
         trigger_new_fig.set(trigger_new_fig.get() + 1)
+        if create_legend:
+            renew_legend.set(renew_legend.get() + 1)
         ui.modal_remove()
         # logging.debug("Now {}".format(trigger_new_fig.get()))
 
@@ -1321,6 +1319,7 @@ def server(input, output, session: Session):
     def legend_content():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         logging.debug("Main legend number {}".format(renew_legend.get()))
+        bv_objct.bonvis_fig.create_legend()
         if bv_objct.bonvis_fig.bonvis_settings.node_style['annot_info'].color_type == 'categorical':
             return ui.output_table("get_legend_df")
         elif bv_objct.bonvis_fig.bonvis_settings.node_style['annot_info'].color_type == 'sequential':
@@ -1329,14 +1328,14 @@ def server(input, output, session: Session):
     @render.table
     def get_legend_df():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-        print("Legend number {}".format(renew_legend.get()))
+        # print("Legend number {}".format(renew_legend.get()))
         leg_df = bv_objct.bonvis_fig.fig_leg_df
         return leg_df
 
     @render.plot
     def get_cbar():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-        print("Color bar number {}".format(renew_legend.get()))
+        # print("Color bar number {}".format(renew_legend.get()))
         return bv_objct.bonvis_fig.fig_cbar
 
     # @render.text
