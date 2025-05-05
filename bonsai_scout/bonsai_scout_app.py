@@ -195,6 +195,8 @@ app_ui = ui.page_sidebar(
                 #                                 selected=None),
                 ui.input_selectize("fig_format", None, choices=["png", "svg"], selected='.png'),
                 ui.download_button("tree_download", "Download", class_="btn-primary"),
+                ui.p(),
+                ui.output_ui("download_page_link"),
             ),
             open=False, id='sidebar_accordion',
         ),
@@ -953,8 +955,8 @@ def server(input, output, session: Session):
     def preprocess_make_tree():
         req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-        logging.warning("user_id: %r url_search: %r", user_id, session.input[".clientdata_url_search"].get())
-        logging.warning("bv_objcts.keys(): %r", bv_objcts.keys())
+        logging.debug("user_id: %r url_search: %r", user_id, session.input[".clientdata_url_search"].get())
+        logging.debug("bv_objcts.keys(): %r", bv_objcts.keys())
         # Determine whether settings should be reset
         ax_lims = None
 
@@ -2045,6 +2047,33 @@ def server(input, output, session: Session):
     #         asyncio.create_task(delayed_remove())
 
             # session.call_later(0, lambda: asyncio.create_task(dismiss_later()))
+
+    @reactive.calc
+    def url():
+        myurl_search = session.input[".clientdata_url_search"].get()
+        data = [None]
+        try:
+            data = myurl_search.strip().split("=")
+        except:
+            return ""
+        if data[0] != "?dir":
+            return ""
+        if os.path.exists("/scicore/web/scismara/scismara/www/scMARA/jobs/{}/downloads/index.html".format(data[1])):
+            return "https://scmara.unibas.ch/BONSAI/jobs/{}/downloads/index.html".format(data[1])
+        return ""
+
+    @render.ui
+    def download_page_link():
+        url_to_follow = url()
+        if len(url_to_follow) > 0:
+            return_div = ui.div(
+                ui.HTML("<strong>Download the <em>Bonsai</em> results:</strong>"),
+                ui.a("Go to download page", href=url(), class_="btn btn-primary", target="_blank")
+            )
+        else:
+            return_div = ""
+        return return_div
+
     @session.on_ended
     def _():
         for key in list(bv_objcts.keys()):
