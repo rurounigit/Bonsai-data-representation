@@ -2026,6 +2026,28 @@ def server(input, output, session: Session):
                 if ids:
                     ui.modal_remove(ids.pop(0))
 
+    # Warning popup
+    # @reactive.effect
+    # def _():
+    #     if first_run():
+    #         first_run.set(False)
+    #         # Save the ID for removal later
+    #         m = ui.modal(ui.strong("Important:"),
+    #                         ui.p("Distances between nodes should always be measured along the tree."),
+    #                         ui.p("Not by their positions in the 2D-figure!"),
+    #                         style='font-size:large;font-style:italic',
+    #                         easy_close=True, size='m')
+    #         id = ui.modal_show(m)
+
+    #         # Launch an async task to remove the modal after 5 seconds
+    #         async def delayed_remove():
+    #             await asyncio.sleep(7)
+    #             ui.modal_remove(id)
+
+    #         asyncio.create_task(delayed_remove())
+
+            # session.call_later(0, lambda: asyncio.create_task(dismiss_later()))
+
     @reactive.calc
     def url():
         myurl_search = session.input[".clientdata_url_search"].get()
