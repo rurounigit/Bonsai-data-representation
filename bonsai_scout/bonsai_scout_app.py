@@ -1739,8 +1739,6 @@ def server(input, output, session: Session):
                         with reactive.isolate():
                             curr_selected_subset = selected_subsets[subset_ind].get()
                             logging.debug("Switching mask {} on.".format(subset_ind))
-                            # if not input.switch_mask():
-                            # ui.update_switch('use_mask', value=True)
                             curr_selected_subset['mask_is_on'] = True
                             selected_subsets[subset_ind].set(curr_selected_subset)
                             update_mask.set(update_mask.get() + 1)
