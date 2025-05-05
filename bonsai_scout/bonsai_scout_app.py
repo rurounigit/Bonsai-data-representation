@@ -190,7 +190,7 @@ app_ui = ui.page_sidebar(
                                ),
                                ),
             ui.accordion_panel('Downloads',
-                ui.HTML("<strong>Download the <em>Bonsai</em>:</strong>"),
+                ui.HTML("<strong>Download the visualization:</strong>"),
                 # ui.input_selectize('figure_format', "Feature type:", {},
                 #                                 selected=None),
                 ui.input_selectize("fig_format", None, choices=["png", "svg"], selected='.png'),
@@ -2067,7 +2067,10 @@ def server(input, output, session: Session):
         url_to_follow = url()
         if len(url_to_follow) > 0:
             return_div = ui.div(
-                ui.HTML("<strong>Download the <em>Bonsai</em> results:</strong>"),
+                ui.HTML("<strong>Download the <em>Bonsai</em> results:</strong><br>"),
+                ui.HTML("Follow the link to download the full <em>Sanity</em>, <em>Cellstates</em>, "
+                        "and <em>Bonsai</em> results."),
+                ui.p(),
                 ui.a("Go to download page", href=url(), class_="btn btn-primary", target="_blank")
             )
         else:
