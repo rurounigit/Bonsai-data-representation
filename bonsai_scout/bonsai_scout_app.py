@@ -190,11 +190,13 @@ app_ui = ui.page_sidebar(
                                ),
                                ),
             ui.accordion_panel('Downloads',
-                ui.HTML("<strong>Download the <em>Bonsai</em>:</strong>"),
+                ui.HTML("<strong>Download the visualization:</strong>"),
                 # ui.input_selectize('figure_format', "Feature type:", {},
                 #                                 selected=None),
                 ui.input_selectize("fig_format", None, choices=["png", "svg"], selected='.png'),
                 ui.download_button("tree_download", "Download", class_="btn-primary"),
+                ui.p(),
+                ui.output_ui("download_page_link"),
             ),
             open=False, id='sidebar_accordion',
         ),
@@ -203,7 +205,7 @@ app_ui = ui.page_sidebar(
         # ui.input_action_button("reset", "Reset settings"),
         # 1.3 Store current settings, such that user can start from the current settings
         # ui.input_action_button("store", "Store settings"),
-        open='open',
+        open='always',
     ),
     # Theme code - start
     shinyswatch.theme.minty,
@@ -556,6 +558,11 @@ def server(input, output, session: Session):
                 "For this, we search for features that maximize the probability that, " \
                 "when picking random cells from the two groups, the feature is always higher "
                 "or always lower in the cell from Group 1 than in the cell from Group 2.<br>"),
+            ui.HTML("<em>Bonsai-scout</em> allows for finding marker genes/features that " \
+                    "distinguish two groups of cells/objects. " \
+                    "For this, we search for features that maximize the probability that, " \
+                    "when picking random cells from the two groups, the feature is always higher "
+                    "or always lower in the cell from Group 1 than in the cell from Group 2. <br>"),
             ui.HTML("To find marker features, one first selects which of the feature-types should be used. " \
                 "Then, one needs to select two subsets: by 1) picking a subtree, or 2) picking an annotation-category.<br>" \
                 "If only one subset is picked, the second subset will be all remaining cells by default." \
@@ -563,21 +570,22 @@ def server(input, output, session: Session):
             ui.p(),
             ui.h5("Picking an annotation-category:"),
             ui.HTML("Note that only categories can be picked that are part of the annotation that is " \
-                "currently activated in the 'Annotation'-tab.<br>"),
+                    "currently activated in the 'Annotation'-tab.<br>"
+                    "<em>Note:</em> You can find marker genes on tree-based clusters "
+                    "once you have added a clustering as Annotation in the 'Cluster'-tab."),
             ui.p(),
             ui.h5("Selecting a subtree:"),
-            ui.HTML("One picks a subtree by first selecting the ancestor of the subtree, "
-            "and then any node in the subtree. " \
-            "With the second node, one can thus select on which side of the ancestor we " \
-            "want to select the subtree.<br>" \
-            "Practically, one needs to select a node in the tree, and then click the "
-            "'Ancestor'- or 'Downstream'-button.<br>"),
+            ui.HTML("One picks a subtree by 4 clicks: <br>"
+                    "1. Click the subtree-ancestor in the <em>Bonsai</em>,<br> "
+                    "2. Click the black 'Ancestor'-button in the right sidebar. <br>"
+                    "3. Click any node in the subtree (i.e., downstream of the selected ancestor. <br>"
+                    "4. Click the black 'Downstream'-button in the right sidebar. <br>"),
             ui.p(),
             ui.h5("Testing the selections, and getting the markers:"),
             ui.HTML("The selection can be tested by using the 'Show only subset'-switch.<br>"),
-            ui.HTML("<strong>After selecting the desired subsets, click 'Get markers!' " \
-            "to get the marker features with their scores. Scores are between 0 and 1, " \
-            "where scores indi to 0 or close to 1 indicate strong markers.</strong>"),
+            ui.HTML("<strong>After selecting the desired subsets, click 'Get markers!' "
+                    "to get the marker features with their scores. Scores are between 0 and 1, "
+                    "where scores close to 0 or close to 1 indicate strong markers.</strong>"),
             size="xl",
             easy_close=True,
             fade=True,
@@ -947,8 +955,8 @@ def server(input, output, session: Session):
     def preprocess_make_tree():
         req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-        logging.warning("user_id: %r url_search: %r", user_id, session.input[".clientdata_url_search"].get())
-        logging.warning("bv_objcts.keys(): %r", bv_objcts.keys())
+        logging.debug("user_id: %r url_search: %r", user_id, session.input[".clientdata_url_search"].get())
+        logging.debug("bv_objcts.keys(): %r", bv_objcts.keys())
         # Determine whether settings should be reset
         ax_lims = None
 
@@ -1176,15 +1184,13 @@ def server(input, output, session: Session):
             if update_figure_kwargs.get() is None:
                 return
             stored_kwargs = update_figure_kwargs.get()
-            bv_objct.bonvis_fig.update_figure(**stored_kwargs)
-            node_style_upd = stored_kwargs['node_style']
+            create_legend = bv_objct.bonvis_fig.update_figure(**stored_kwargs)
             update_figure_kwargs.set(None)
-        if node_style_upd is not None:
-            with reactive.isolate():
-                renew_legend.set(renew_legend.get() + 1)
         bv_objct.bonvis_fig.create_figure()
         # logging.debug("Setting trigger_new_fig higher. Currently {}".format(trigger_new_fig.get()))
         trigger_new_fig.set(trigger_new_fig.get() + 1)
+        if create_legend:
+            renew_legend.set(renew_legend.get() + 1)
         ui.modal_remove()
         # logging.debug("Now {}".format(trigger_new_fig.get()))
 
@@ -1315,6 +1321,7 @@ def server(input, output, session: Session):
     def legend_content():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         logging.debug("Main legend number {}".format(renew_legend.get()))
+        bv_objct.bonvis_fig.create_legend()
         if bv_objct.bonvis_fig.bonvis_settings.node_style['annot_info'].color_type == 'categorical':
             return ui.output_table("get_legend_df")
         elif bv_objct.bonvis_fig.bonvis_settings.node_style['annot_info'].color_type == 'sequential':
@@ -1323,14 +1330,14 @@ def server(input, output, session: Session):
     @render.table
     def get_legend_df():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-        print("Legend number {}".format(renew_legend.get()))
+        # print("Legend number {}".format(renew_legend.get()))
         leg_df = bv_objct.bonvis_fig.fig_leg_df
         return leg_df
 
     @render.plot
     def get_cbar():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-        print("Color bar number {}".format(renew_legend.get()))
+        # print("Color bar number {}".format(renew_legend.get()))
         return bv_objct.bonvis_fig.fig_cbar
 
     # @render.text
@@ -2040,6 +2047,36 @@ def server(input, output, session: Session):
     #         asyncio.create_task(delayed_remove())
 
             # session.call_later(0, lambda: asyncio.create_task(dismiss_later()))
+
+    @reactive.calc
+    def url():
+        myurl_search = session.input[".clientdata_url_search"].get()
+        data = [None]
+        try:
+            data = myurl_search.strip().split("=")
+        except:
+            return ""
+        if data[0] != "?dir":
+            return ""
+        if os.path.exists("/scicore/web/scismara/scismara/www/scMARA/jobs/{}/downloads/index.html".format(data[1])):
+            return "https://scmara.unibas.ch/BONSAI/jobs/{}/downloads/index.html".format(data[1])
+        return ""
+
+    @render.ui
+    def download_page_link():
+        url_to_follow = url()
+        if len(url_to_follow) > 0:
+            return_div = ui.div(
+                ui.HTML("<strong>Download the <em>Bonsai</em> results:</strong><br>"),
+                ui.HTML("Follow the link to download the full <em>Sanity</em>, <em>Cellstates</em>, "
+                        "and <em>Bonsai</em> results."),
+                ui.p(),
+                ui.a("Go to download page", href=url(), class_="btn btn-primary", target="_blank")
+            )
+        else:
+            return_div = ""
+        return return_div
+
     @session.on_ended
     def _():
         for key in list(bv_objcts.keys()):
