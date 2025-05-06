@@ -2604,3 +2604,15 @@ def categorical_cmap(nc, nsc, cmap="tab10", continuous=False):
         cols[i * nsc:(i + 1) * nsc, :] = rgb
     cmap = matplotlib.colors.ListedColormap(cols)
     return cmap, cols
+
+
+def get_placeholder_fig():
+    fig, ax = plt.subplots()
+    ax.set_xlim(-1, 1)
+    ax.set_ylim(-1, 1)
+    ax.axis('off')
+
+    # Add multi-line centered text
+    text = "This is line 1\nThis is line 2\nAnd this is line 3"
+    ax.text(0, 0, text, ha='center', va='center', fontsize=12)
+    return fig
