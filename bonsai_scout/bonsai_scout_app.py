@@ -470,6 +470,32 @@ def server(input, output, session: Session):
     #     return ui.HTML("<strong>Bonsai visualization</strong><br><strong>Dataset:</strong> {:s}<br><strong>Number of cells:</strong> {:d}.<br>".format(bv_objct.bonvis_metadata.dataset,
     #                                                                              bv_objct.bonvis_metadata.n_cells))
 
+    def show_waiting_modal(message="Processing your clicks...", trigger=None):
+        modal = ui.modal(
+            ui.h3(ui.HTML("<em>Bonsai-scout</em> is rendering...")),
+            ui.HTML("<br>{}<br>".format(message)),
+            size="m",
+            easy_close=False,
+            fade=False,
+            footer=None,
+        )
+        ui.modal_show(modal)
+        if trigger is not None:
+            trigger.set(trigger.get() + 1)
+
+    @reactive.effect
+    @reactive.event(first_tree_plot)
+    def _():
+        # If this is the first tree plot, put up a placeholder while we calculate the first figure
+        if first_tree_plot.get():
+            logging.debug("RETURNING TO PLACEHODLER!")
+            trigger_new_fig.set(trigger_new_fig.get() + 1)
+            show_waiting_modal(message="<em>Bonsai-scout</em> is loading your first tree-representation.<br> "
+                                       "For large datasets, this can take a while, please be patient.")
+        else:
+            ui.modal_remove()
+            logging.debug("MOVING ON!")
+
     @render.ui
     def dataset_info():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
@@ -753,18 +779,6 @@ def server(input, output, session: Session):
     # Outputs
     # --------------------------------------------------------
 
-    def show_waiting_modal(message="Processing your clicks...", trigger=None):
-        modal = ui.modal(
-            ui.h3(ui.HTML("<em>Bonsai</em> is scouting...")),
-            ui.HTML("<br>{}<br>".format(message)),
-            size="m",
-            easy_close=False,
-            fade=False,
-            footer=None,
-        )
-        ui.modal_show(modal)
-        trigger.set(trigger.get() + 1)
-
     @reactive.effect
     def _():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
@@ -904,30 +918,19 @@ def server(input, output, session: Session):
     @render.plot(alt="Bonsai plot")
     @reactive.event(trigger_new_fig)
     def make_tree():
-        if first_tree_plot.get():
-            logging.debug("Putting up a placeholder figure")
-            first_tree_plot.set(False)
-            return get_placeholder_fig()
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         trigger_new_fig.get()
         # logging.debug("trigger_new_fig.get(): {}".format(trigger_new_fig.get()))
+        if first_tree_plot.get():
+            first_tree_plot.set(False)
         return bv_objct.bonvis_fig.fig
 
     @reactive.effect
     def preprocess_make_tree():
+        req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         logging.debug("user_id: %r url_search: %r", user_id, session.input[".clientdata_url_search"].get())
         logging.debug("bv_objcts.keys(): %r", bv_objcts.keys())
-
-        # If this is the first tree plot, put up a placeholder while we calculate the first figure
-        if first_tree_plot.get():
-            logging.debug("RETURNING TO PLACEHODLER!")
-            trigger_new_fig.set(trigger_new_fig.get() + 1)
-            return
-        else:
-            logging.debug("MOVING ON!")
-
-        req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         # Determine whether settings should be reset
         ax_lims = None
 
