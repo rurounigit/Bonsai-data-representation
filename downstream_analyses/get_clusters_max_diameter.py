@@ -69,7 +69,7 @@ def get_footfall_clustering_from_nwk_str(tree_nwk_str, n_clusters, cell_ids=None
 
 
 def get_min_pdists_clustering_from_nwk_str_new(tree_nwk_str, n_clusters, cell_ids=None, get_cell_ids_all_splits=False,
-                                             node_id_to_n_cells=None, verbose=True):
+                                             node_id_to_n_cells=None, verbose=True, footfall=False):
     if verbose:
         print("\nInit min-dist clustering-tree")
     cluster_tree = Cluster_Tree()
@@ -78,7 +78,7 @@ def get_min_pdists_clustering_from_nwk_str_new(tree_nwk_str, n_clusters, cell_id
         cluster_tree.root.add_info_to_nodes(node_id_to_info=node_id_to_n_cells, info_key='n_cells')
 
     all_clusterings, footfall_edges = get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=cell_ids,
-                                                           verbose=verbose)
+                                                           verbose=verbose, footfall=footfall)
     return all_clusterings, footfall_edges
 
 
@@ -285,7 +285,8 @@ def get_min_pdists_clustering(cluster_tree, n_clusters, cell_ids=None, get_cell_
     return clusters, footfall_edges
 
 
-def get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=None, get_cell_ids_all_splits=False, verbose=True):
+def get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=None, get_cell_ids_all_splits=False, verbose=True,
+                                  footfall=False):
     # if get_cell_ids_all_splits:
     #     cell_ids_splits = {}
     if cluster_tree.vert_ind_to_node is None:
@@ -322,8 +323,9 @@ def get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=None, get_c
             for vert_ind, node in tree.vert_ind_to_node.items():
                 if node.parentNode is not None:
                     footfall_score = node.ds_leafs * (tree.n_leafs - node.ds_leafs) * node.tParent
-                    footfall_score += node.ds_dists * (tree.n_leafs - node.ds_leafs)
-                    footfall_score += node.us_dists * node.ds_leafs
+                    if not footfall:
+                        footfall_score += node.ds_dists * (tree.n_leafs - node.ds_leafs)
+                        footfall_score += node.us_dists * node.ds_leafs
                     if footfall_score > max_footfall_score:
                         max_footfall_node = node
                         max_footfall_score = footfall_score

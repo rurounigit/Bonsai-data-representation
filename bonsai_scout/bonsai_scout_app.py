@@ -1292,6 +1292,7 @@ def server(input, output, session: Session):
     """Changing the legend"""
 
     @render.ui
+    @reactive.event(renew_legend)
     def legend_content():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         logging.debug("Main legend number {}".format(renew_legend.get()))
@@ -1305,14 +1306,16 @@ def server(input, output, session: Session):
     def get_legend_df():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         # print("Legend number {}".format(renew_legend.get()))
-        leg_df = bv_objct.bonvis_fig.fig_leg_df
-        return leg_df
+        if renew_legend.get() > -1:
+            leg_df = bv_objct.bonvis_fig.fig_leg_df
+            return leg_df
 
     @render.plot
     def get_cbar():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         # print("Color bar number {}".format(renew_legend.get()))
-        return bv_objct.bonvis_fig.fig_cbar
+        if renew_legend.get() > -1:
+            return bv_objct.bonvis_fig.fig_cbar
 
     # @render.text
     # def clk():
