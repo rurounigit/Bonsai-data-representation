@@ -2228,6 +2228,7 @@ def read_and_filter(data_folder, meansfile, stdsfile, sanityOutput, zscoreCutoff
 
     # First determine the number of genes on process 0
     if mpiInfo.rank == 0:
+        nGenesOrig = None
         with open(meanspath, 'r') as fp:
             for (nGenesOrig, _) in enumerate(fp, 1):
                 pass
