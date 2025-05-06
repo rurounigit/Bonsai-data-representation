@@ -403,10 +403,6 @@ bv_objcts = BonvisObjects()
 pool = concurrent.futures.ProcessPoolExecutor()
 
 
-def slow_sum(x, y):
-    time.sleep(5)  # Simulate a slow synchronous task
-    return x + y
-
 def server(input, output, session: Session):
     # --------------------------------------------------------
     # Reactive calculations and effects
@@ -647,6 +643,7 @@ def server(input, output, session: Session):
         )
         ui.modal_show(modal)
 
+    # Set all things to their initial values
     @reactive.effect
     def _():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
@@ -654,77 +651,36 @@ def server(input, output, session: Session):
             "geometry",
             selected=bv_objct.init_geometry,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "ly_type",
             choices=bv_objct.layout_types_dict,
             selected=bv_objct.init_layout,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "node_style",
             choices=bv_objct.annotation_dict,
             selected=bv_objct.init_node_style,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_slider("n_clusters", label="Number of clusters:", min=2, max=bv_objct.max_n_clusters, value=10)
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "size_style",
             choices=bv_objct.size_annotation_dict,
             selected=bv_objct.init_size_style,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "feature_path_expr",
             choices=bv_objct.feature_dict,
             selected=bv_objct.init_feature_path,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "feature_path_mrkr",
             choices=bv_objct.feature_dict,
             selected=bv_objct.init_feature_path,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_switch(
             "switch_mask",
             value=bv_objct.init_switch_mask,
         )
-
-    # @reactive.effect
-    # def _():
-    #     bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-    #     ui.update_slider(
-    #         "cluster_diam",
-    #         max=np.round(np.log(2 * bv_objct.longest_path_from_root_to_leaf), 2),
-    #         min=np.round(np.log(2 * bv_objct.shortest_path_from_root_to_leaf), 2)
-    #     )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_accordion("options_accordion", show=bv_objct.init_options_accordion)
     ### ###
 
@@ -971,7 +927,6 @@ def server(input, output, session: Session):
         else:
             logging.debug("MOVING ON!")
 
-        time.sleep(1)
         req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         # Determine whether settings should be reset
         ax_lims = None
