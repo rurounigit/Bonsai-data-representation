@@ -285,7 +285,8 @@ def get_min_pdists_clustering(cluster_tree, n_clusters, cell_ids=None, get_cell_
     return clusters, footfall_edges
 
 
-def get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=None, get_cell_ids_all_splits=False, verbose=True):
+def get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=None, get_cell_ids_all_splits=False, verbose=True,
+                                  footfall=False):
     # if get_cell_ids_all_splits:
     #     cell_ids_splits = {}
     if cluster_tree.vert_ind_to_node is None:
@@ -322,8 +323,9 @@ def get_min_pdists_clustering_new(cluster_tree, n_clusters, cell_ids=None, get_c
             for vert_ind, node in tree.vert_ind_to_node.items():
                 if node.parentNode is not None:
                     footfall_score = node.ds_leafs * (tree.n_leafs - node.ds_leafs) * node.tParent
-                    footfall_score += node.ds_dists * (tree.n_leafs - node.ds_leafs)
-                    footfall_score += node.us_dists * node.ds_leafs
+                    if not footfall:
+                        footfall_score += node.ds_dists * (tree.n_leafs - node.ds_leafs)
+                        footfall_score += node.us_dists * node.ds_leafs
                     if footfall_score > max_footfall_score:
                         max_footfall_node = node
                         max_footfall_score = footfall_score

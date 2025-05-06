@@ -421,7 +421,8 @@ for ind, node_id in enumerate(node_ids):
 node_id_to_n_cells = {node_id: vert_n_cells[ind] for ind, node_id in enumerate(node_ids)}
 all_clusterings, cut_edges = get_min_pdists_clustering_from_nwk_str_new(tree_nwk_str=nwk_str, n_clusters=100,
                                                                         cell_ids=node_ids_with_cells,
-                                                                        node_id_to_n_cells=node_id_to_n_cells)
+                                                                        node_id_to_n_cells=node_id_to_n_cells,
+                                                                        footfall=False)
 
 # all_clusterings is a dictionary with keys 'Cluster_n=..' and as vals lists of lists of cs-IDs which give the clusters
 # We need to convert this into a pandas dataframe with index the cs_ids and entries the cluster-assignments as "cl_{}"
