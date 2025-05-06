@@ -41,7 +41,8 @@ sys.path.append(parent_dir)
 from bonsai_scout.bonsai_scout_app_helpers import store_current_settings, \
     get_feature_info_display, BonvisObjects, TEMP_MASK_SECS, TEMP_MASK_STEPS
 
-from bonsai_scout.bonsai_scout_helpers import Bonvis_figure, Bonvis_settings, Bonvis_metadata, update_marker_genes_df
+from bonsai_scout.bonsai_scout_helpers import Bonvis_figure, Bonvis_settings, Bonvis_metadata, update_marker_genes_df, \
+    get_placeholder_fig
 
 from downstream_analyses.get_cluster_helpers import Cluster_Tree
 
@@ -402,10 +403,6 @@ bv_objcts = BonvisObjects()
 pool = concurrent.futures.ProcessPoolExecutor()
 
 
-def slow_sum(x, y):
-    time.sleep(5)  # Simulate a slow synchronous task
-    return x + y
-
 def server(input, output, session: Session):
     # --------------------------------------------------------
     # Reactive calculations and effects
@@ -418,12 +415,13 @@ def server(input, output, session: Session):
     feature_path = reactive.value(None)
     node_style = reactive.value(None)
     size_style = reactive.value(None)
-    n_clusters = reactive.value(None)  # TODO sarah new stuff
     open_marker_gene_warning = reactive.value(0)
     trigger_marker_genes = reactive.value(0)
     trigger_new_fig = reactive.value(0)
     trigger_update_figure = reactive.value(0)
     update_figure_kwargs = reactive.value(None)
+
+    first_tree_plot = reactive.value(True)
 
     # When subset of cells is selected, we update the following. mask_is_on tracks whether only subset is shown in color
     selected_subset_annot = reactive.value({'type': None, 'info': None, 'mask_is_on': False})
@@ -645,6 +643,7 @@ def server(input, output, session: Session):
         )
         ui.modal_show(modal)
 
+    # Set all things to their initial values
     @reactive.effect
     def _():
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
@@ -652,77 +651,36 @@ def server(input, output, session: Session):
             "geometry",
             selected=bv_objct.init_geometry,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "ly_type",
             choices=bv_objct.layout_types_dict,
             selected=bv_objct.init_layout,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "node_style",
             choices=bv_objct.annotation_dict,
             selected=bv_objct.init_node_style,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_slider("n_clusters", label="Number of clusters:", min=2, max=bv_objct.max_n_clusters, value=10)
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "size_style",
             choices=bv_objct.size_annotation_dict,
             selected=bv_objct.init_size_style,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "feature_path_expr",
             choices=bv_objct.feature_dict,
             selected=bv_objct.init_feature_path,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_selectize(
             "feature_path_mrkr",
             choices=bv_objct.feature_dict,
             selected=bv_objct.init_feature_path,
         )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_switch(
             "switch_mask",
             value=bv_objct.init_switch_mask,
         )
-
-    # @reactive.effect
-    # def _():
-    #     bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
-    #     ui.update_slider(
-    #         "cluster_diam",
-    #         max=np.round(np.log(2 * bv_objct.longest_path_from_root_to_leaf), 2),
-    #         min=np.round(np.log(2 * bv_objct.shortest_path_from_root_to_leaf), 2)
-    #     )
-
-    @reactive.effect
-    def _():
-        bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         ui.update_accordion("options_accordion", show=bv_objct.init_options_accordion)
     ### ###
 
@@ -946,6 +904,10 @@ def server(input, output, session: Session):
     @render.plot(alt="Bonsai plot")
     @reactive.event(trigger_new_fig)
     def make_tree():
+        if first_tree_plot.get():
+            logging.debug("Putting up a placeholder figure")
+            first_tree_plot.set(False)
+            return get_placeholder_fig()
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         trigger_new_fig.get()
         # logging.debug("trigger_new_fig.get(): {}".format(trigger_new_fig.get()))
@@ -953,10 +915,19 @@ def server(input, output, session: Session):
 
     @reactive.effect
     def preprocess_make_tree():
-        req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         bv_objct = bv_objcts[(user_id, session.input[".clientdata_url_search"].get())]
         logging.debug("user_id: %r url_search: %r", user_id, session.input[".clientdata_url_search"].get())
         logging.debug("bv_objcts.keys(): %r", bv_objcts.keys())
+
+        # If this is the first tree plot, put up a placeholder while we calculate the first figure
+        if first_tree_plot.get():
+            logging.debug("RETURNING TO PLACEHODLER!")
+            trigger_new_fig.set(trigger_new_fig.get() + 1)
+            return
+        else:
+            logging.debug("MOVING ON!")
+
+        req(input.ly_type(), input.feature_path_mrkr(), input.feature_path_expr(), feature_path)
         # Determine whether settings should be reset
         ax_lims = None
 
