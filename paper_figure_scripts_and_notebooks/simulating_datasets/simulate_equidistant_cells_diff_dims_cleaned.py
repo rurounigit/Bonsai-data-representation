@@ -95,11 +95,11 @@ for n_cells_ind, n_cells_per_clst in enumerate(n_cells_per_clst_list):
         # Randomly sample which cell gets what total umi count
         np.random.shuffle(N_c)
 
-        if not args.add_noise:
-            # Draw gene variances from an exponential with mean 2
-            gene_variances = np.random.exponential(2, num_dims)
-        else:
-            gene_variances = np.ones(num_dims)
+        # if not args.add_noise:
+        # Draw gene variances from an exponential with mean 2
+        gene_variances = np.random.exponential(2, num_dims)
+        # else:
+        #     gene_variances = np.ones(num_dims)
 
         # Take the mean ltqs such that they are sampled from the real data, and that the sum of tqs will in expectation be 1
         mean_ltq = np.log(N_g / np.sum(N_g)) - .5 * gene_variances
