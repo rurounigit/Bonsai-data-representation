@@ -2613,6 +2613,7 @@ def get_placeholder_fig():
     ax.axis('off')
 
     # Add multi-line centered text
-    text = "This is line 1\nThis is line 2\nAnd this is line 3"
-    ax.text(0, 0, text, ha='center', va='center', fontsize=12)
+    text = "Bonsai-scout is loading the tree representation of your data.\n\n" \
+    "For large datasets, this can take a while. Please be patient."
+    ax.text(0, 0, text, ha='center', va='center', fontsize=16)
     return fig
