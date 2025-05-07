@@ -582,15 +582,13 @@ def server(input, output, session: Session):
                 "For this, we search for features that maximize the probability that, " \
                 "when picking random cells from the two groups, the feature is always higher "
                 "or always lower in the cell from Group 1 than in the cell from Group 2.<br>"),
-            ui.HTML("<em>Bonsai-scout</em> allows for finding marker genes/features that " \
-                    "distinguish two groups of cells/objects. " \
-                    "For this, we search for features that maximize the probability that, " \
-                    "when picking random cells from the two groups, the feature is always higher "
-                    "or always lower in the cell from Group 1 than in the cell from Group 2. <br>"),
             ui.HTML("To find marker features, one first selects which of the feature-types should be used. " \
                 "Then, one needs to select two subsets: by 1) picking a subtree, or 2) picking an annotation-category.<br>" \
-                "If only one subset is picked, the second subset will be all remaining cells by default." \
+                "If only one subset is picked, the second subset will be all remaining cells by default. " \
                 "Each subset can be reset by clicking the 'Home'-button.<br>"),
+            ui.p(),
+        ui.h5("Selecting a feature type:"),
+        ui.p("Use the dropdown menu under 'Selecting feature type:' to select in which features we will look for markers."),
             ui.p(),
             ui.h5("Picking an annotation-category:"),
             ui.HTML("Note that only categories can be picked that are part of the annotation that is " \
