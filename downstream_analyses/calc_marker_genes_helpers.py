@@ -259,10 +259,16 @@ def calc_marker_genes_error_bars_approx2(indices1, indices2, means, vars, gene_i
     if n_points_total is None:
         n_points_total = 100
 
-    means_g1 = means[:, indices1]
-    std_g1 = np.sqrt(vars[:, indices1])
-    means_g2 = means[:, indices2]
-    std_g2 = np.sqrt(vars[:, indices2])
+    try:
+        means_g1 = means[:, indices1]
+        std_g1 = np.sqrt(vars[:, indices1])
+        means_g2 = means[:, indices2]
+        std_g2 = np.sqrt(vars[:, indices2])
+    except TypeError:  # Can occur when there is duplicates in the indices-list (in case of cells mapping to same vert)
+        means_g1 = means[:][:, indices1]
+        std_g1 = np.sqrt(vars[:][:, indices1])
+        means_g2 = means[:][:, indices2]
+        std_g2 = np.sqrt(vars[:][:, indices2])
     num_genes, num_cells1 = means_g1.shape
     _, num_cells2 = means_g2.shape
 
