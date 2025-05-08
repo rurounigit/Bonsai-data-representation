@@ -155,7 +155,7 @@ if args.step in ['preprocess', 'all']:
             scData = loadReconstructedTreeAndData(args, args.tmp_folder, all_genes=False, get_cell_info=False,
                                                   corrected_data=True)
         else:
-            mp_print("Could not find tmp-file. Loading tree from start.")
+            mp_print("Could not find tmp-file. Loading tree from start.", ERROR=True)
             scData = initializeSCData(args, createStarTree=True, getOrigData=False, otherRanksMinimalInfo=True)
     else:
         scData = initializeSCData(args, createStarTree=True, getOrigData=False, otherRanksMinimalInfo=True)
