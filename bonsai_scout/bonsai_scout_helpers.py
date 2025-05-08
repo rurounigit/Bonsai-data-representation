@@ -614,11 +614,13 @@ class Bonvis_figure:
         if (annot_info.annot_type == 'cells') or (size_annot_info.annot_type == 'cells'):
             self.single_obj = self.single_cell_obj
             self.multi_obj = self.multi_cell_obj
-            annot_is_cell = True
-        else:
+            annot_is_cell = 'cells'
+        elif (annot_info.annot_type == 'cellstates') or (size_annot_info.annot_type == 'cellstates'):
             self.single_obj = self.single_cs_obj
             self.multi_obj = self.multi_cs_obj
-            annot_is_cell = False
+            annot_is_cell = 'cellstates'
+        else:
+            annot_is_cell = 'verts'
 
         # Some settings
         node_style = self.bonvis_settings.node_style
@@ -634,12 +636,22 @@ class Bonvis_figure:
         self.int_obj['vert_inds_complement'] = self.bonvis_metadata.cell_info['non_int_vert_inds']
 
         # Get some information on verts with one cell
-        if annot_is_cell:
+        if annot_is_cell == 'cells':
             self.single_obj['obj_inds'] = self.bonvis_metadata.cell_info['single_at_vert']
             self.single_obj['vert_inds'] = cell_to_vert[self.single_obj['obj_inds']]
-        else:
+        elif annot_is_cell == 'cellstates':
             self.single_obj['obj_inds'] = self.bonvis_metadata.cs_info['single_cs_at_vert']
             self.single_obj['vert_inds'] = cs_to_vert[self.single_obj['obj_inds']]
+
+        #Get some information on verts with multiple cells
+        # if annot_is_cell:
+        #     self.multi_obj['obj_inds'] = self.bonvis_metadata.cell_info['multi_at_vert']
+        #     self.multi_obj['vert_inds'] = cell_to_vert[self.multi_obj['obj_inds']]
+        #     self.multi_obj['obj_ind_to_vert_ind'] = {self.multi_obj['obj_inds'][ind]: self.multi_obj['vert_inds'][ind] for ind in range(len(self.multi_obj['vert_inds']))}
+        # else:
+        #     self.multi_obj['obj_inds'] = self.bonvis_metadata.cs_info['multi_cs_at_vert']
+        #     self.multi_obj['vert_inds'] = cs_to_vert[self.multi_obj['obj_inds']]
+        #     self.multi_obj['obj_ind_to_vert_ind'] = {self.multi_obj['obj_inds'][ind]: self.multi_obj['vert_inds'][ind] for ind in range(len(self.multi_obj['vert_inds']))}
 
         cell_to_celltype, cell_to_color = self.get_color_info(annot_info=annot_info)
         self.vert_to_size = self.get_size_info(size_annot_info=size_annot_info, annot_info=annot_info)
@@ -673,11 +685,14 @@ class Bonvis_figure:
                                                     facecolors=facecolors, edgecolors=node_style['edgecolor'],
                                                     linewidths=node_style['lw_cell'], zorder=5)
 
-        self.plot_multi_obj_verts(node_coords=node_coords, annot_is_cell=annot_is_cell, cell_to_color=cell_to_color,
-                                  node_style=node_style, cell_to_celltype=cell_to_celltype)
+        # if annot_is_cell != 'verts':
+        self.plot_multi_obj_verts(node_coords=node_coords, cell_to_color=cell_to_color,
+                                node_style=node_style, cell_to_celltype=cell_to_celltype,
+                                annot_type=annot_info.annot_type)
 
     def plot_multi_obj_verts(self, node_coords=None, cell_to_color=None,
-                             node_style=None, annot_is_cell=None, cell_to_celltype=None):
+                             node_style=None, cell_to_celltype=None,
+                             annot_type = None):
         # cell_info_dict = self.bonvis_metadata.cell_info['cell_info_dict']
         # cs_info_dict = self.bonvis_metadata.cs_info['cs_info_dict']
 
@@ -687,15 +702,18 @@ class Bonvis_figure:
         #     n_obj_per_vert = self.bonvis_metadata.vert_info['n_css_per_vert']
 
         # Get some information on special cases where we have more than one cell per vert
-        if annot_is_cell:
+        if annot_type=='cells':
             # obj_inds_at_multi = self.bonvis_metadata.cell_info['multi_at_vert']
             verts_w_multi_objs = self.bonvis_metadata.tree_info['multi_cell_inds']
             vert_ind_to_obj_inds = self.bonvis_metadata.vert_info['vert_ind_to_cell_inds']
             # obj_ind_to_vert_ind = np.array(cell_info_dict['cell_ind_to_vert_ind'])
-        else:
+        elif annot_type=='cellstates':
             # obj_inds_at_multi = self.bonvis_metadata.cs_info['multi_cs_at_vert']
             verts_w_multi_objs = self.bonvis_metadata.tree_info['multi_cs_inds']
             vert_ind_to_obj_inds = self.bonvis_metadata.vert_info['vert_ind_to_cs_inds']
+        elif annot_type=='verts':
+            # obj_inds_at_multi = self.bonvis_metadata.cs_info['multi_cs_at_vert']
+            verts_w_multi_objs = self.bonvis_metadata.tree_info['multi_cs_inds']
             # obj_ind_to_vert_ind = np.array(cs_info_dict['cs_ind_to_vert_ind'])
         # vert_inds = obj_to_vert[obj_inds]
         # n_obj_at_vert = n_obj_per_vert[vert_inds]
@@ -710,11 +728,14 @@ class Bonvis_figure:
             # Find coordinates for vertex
             coords = node_coords[vert_ind]
             # Find all objects mapping to this vert
-            obj_inds_at_this_vert = np.array(vert_ind_to_obj_inds[str(vert_ind)])
+            if annot_type != 'verts':
+                obj_inds_at_this_vert = np.array(vert_ind_to_obj_inds[str(vert_ind)])
+            else:
+                obj_inds_at_this_vert = np.array([vert_ind])
             n_objs = len(obj_inds_at_this_vert)
 
             # Find all colors for these objects
-            # if annot_info.annot_type in ['cells', 'cellstates']:
+            # if annot_is_cell:
             these_cats = cell_to_celltype[obj_inds_at_this_vert]
             facecolors = cell_to_color[obj_inds_at_this_vert]
             # elif annot_info.annot_type == 'verts':
@@ -1333,9 +1354,11 @@ class Bonvis_figure:
         cell_to_celltype, cell_to_color = self.get_color_info(annot_info=annot_info)
 
         if (annot_info.annot_type == 'cells') or (size_annot_info.annot_type == 'cells'):
-            annot_is_cell = True
+            annot_is_cell = 'cells'
+        elif (annot_info.annot_type == 'cellstates') or (size_annot_info.annot_type == 'cellstates'):
+            annot_is_cell = 'cellstates'
         else:
-            annot_is_cell = False
+            annot_is_cell = 'verts'
 
         if annot_info.annot_type in ['cells', 'cellstates']:
             self.single_obj['coll'].set_facecolors(cell_to_color[self.single_obj['obj_inds']])
@@ -1343,8 +1366,9 @@ class Bonvis_figure:
             self.int_obj['coll'].set_facecolors(cell_to_color[self.int_obj['vert_inds']])
             self.single_obj['coll'].set_facecolors(cell_to_color[self.single_obj['vert_inds']])
 
-        self.plot_multi_obj_verts(node_coords=node_coords, annot_is_cell=annot_is_cell, cell_to_color=cell_to_color,
-                                  node_style=node_style, cell_to_celltype=cell_to_celltype)
+        # if annot_is_cell != 'verts':
+        self.plot_multi_obj_verts(node_coords=node_coords, cell_to_color=cell_to_color,
+                                node_style=node_style, cell_to_celltype=cell_to_celltype, annot_type=annot_info.annot_type)
 
     def update_fig_coords(self):
         # self.coords_info = Coords_info(self.bonvis_settings.transf_info, self.bonvis_data.obsm['bonsai_coords'],
