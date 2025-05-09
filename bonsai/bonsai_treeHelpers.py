@@ -1625,7 +1625,7 @@ class TreeNode:
         if runConfigs['useNN']:
             # Test whether there are enough nearest neighbours for each node. Otherwise, get new NNs next round
             unq_node_inds, counts = np.unique(np.array(old_pairs + new_pairs), return_counts=True)
-            # counts = np.sum(NNInfo['conn_mat'], axis=0)
+            # TODO: Check if we cannot just keep track of these counts
             few_nn_inds = unq_node_inds[
                 np.where(counts <= 0.2 * runConfigs['kNN'])[0]]  # TODO: Only do those problematic ones
             for few_nn_node_ind in few_nn_inds:
@@ -1961,7 +1961,10 @@ class TreeNode:
         # We ask for the nearest neighbours
         nodeInds = [child.nodeInd for child in self.childNodes]
         # TODO: Check how to get approxNNs beyond the brute-force sklearn one
-        index, nns = getApproxNNs(ltqsCh, index=None, k=kNN + 1, n_bits_factor=100, metric='cosine',
+        # Instead of taking cosine metric, we can also normalize the vectors and use squared-euclidean
+        norms = np.linalg.norm(ltqsCh, axis=0)
+        np.divide(ltqsCh, norms, out=ltqsCh)
+        index, nns = getApproxNNs(ltqsCh, index=None, k=kNN + 1, n_bits_factor=100, metric='sqeuclidean',
                                   pointsIds=nodeInds, addPoints=True, th1=1e9, th2=1e9)
         nns = np.array(nodeInds)[nns]
         # Create unique set of all pairs with at least one nn-connection
@@ -1995,7 +1998,7 @@ class TreeNode:
     def get_new_nn_pairs(self, new_node, NNInfo, runConfigs, UBInfo=None, old_pairs_list=None, update_nn_index=False,
                          xrAIRoot=None):
         if UBInfo is not None:
-            # In this case also delete old UB-information on the "new_node", since we're going to calculate that again.
+            # TODO: Check if this is necessary: # In this case also delete old UB-information on the "new_node", since we're going to calculate that again.
             to_be_deleted = np.where(UBInfo['pairs'] == new_node.nodeInd)[0]
             UBInfo['pairs'] = np.delete(UBInfo['pairs'], to_be_deleted, axis=0)
             UBInfo['UBs'] = np.delete(UBInfo['UBs'], to_be_deleted)
@@ -2007,28 +2010,48 @@ class TreeNode:
         # Here, we should just get NN-pairs with the new ancestor. Take twice as many neighbours as for the
         # other nodes to compensate for no other nodes adding connections to ancestor
         if not update_nn_index:
-            index, nns = getApproxNNs((new_node.ltqs - NNInfo['subtracted_mean'])[:, None], index=NNInfo['index'],
-                                      k=2 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
+            centered_query = (new_node.ltqs - NNInfo['subtracted_mean'])[:, None]
+            normalized_query = centered_query / np.linalg.norm(centered_query)
+            index, nns = getApproxNNs(normalized_query, index=NNInfo['index'],
+                                      k=20 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
         else:
             # We gather information about the current children of the root
             ltqsCh, _, _ = self.getInfoChildren()
             # We center the ltq-information around the root
             ltqsCh -= xrAIRoot[:, None]
             NNInfo['subtracted_mean'] = xrAIRoot
+
+            # Instead of taking cosine metric, we can also normalize the vectors and use squared-euclidean
+            norms = np.linalg.norm(ltqsCh, axis=0)
+            np.divide(ltqsCh, norms, out=ltqsCh)
+
             # We ask for the nearest neighbours
             nodeInds = [child.nodeInd for child in self.childNodes]
-            pointsT = np.ascontiguousarray(np.float32(ltqsCh.T))
+            pointsT = ltqsCh.T
             NNInfo['index'].fit(pointsT)
             NNInfo['index'].IDs = nodeInds
-            index, nns = getApproxNNs((new_node.ltqs - NNInfo['subtracted_mean'])[:, None], index=NNInfo['index'],
-                                      k=2 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
+
+            centered_query = (new_node.ltqs - NNInfo['subtracted_mean'])[:, None]
+            normalized_query = centered_query / np.linalg.norm(centered_query)
+
+            index, nns = getApproxNNs(normalized_query, index=NNInfo['index'],
+                                      k=20 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
             NNInfo['leafToChild'] = {nodeInd: nodeInd for nodeInd in nodeInds}
 
         nns = np.array(index.IDs)[nns]
-        pairs = [(new_node.nodeInd, NNInfo['leafToChild'][nb]) for nb in nns[0, :] if
-                 NNInfo['leafToChild'][nb] != new_node.nodeInd]
+        # Make list of unique neighbors that are not the node itself
+        non_unique_partners = np.array([NNInfo['leafToChild'][nb] for nb in nns[0, :] if NNInfo['leafToChild'][nb] != new_node.nodeInd])
+        seen = set()
+        partners = []
+        for item in non_unique_partners:
+            if item not in seen:
+                seen.add(item)
+                partners.append(item)
 
+        pairs = [(new_node.nodeInd, partner) for partner in partners]
         if len(pairs) > 0:
+            if len(pairs) > runConfigs['kNN']:
+                pairs = pairs[:runConfigs['kNN']]
             # Update the connectivity matrix for the nearest neighbors with these new pairs
             pairs_array = np.array(pairs)
             NNInfo['conn_mat'][pairs_array[:, 0], pairs_array[:, 1]] = True
@@ -2405,7 +2428,8 @@ class TreeNode:
             # First add the neighbor-connections from the merged children
             NN_conn_mat = NNInfo['conn_mat']
             for gchild_nodeInd in gchildInds:
-                NN_conn_mat[:, [newNode.nodeInd]] += NN_conn_mat[:, [gchild_nodeInd]]
+                # TODO: Check if this is necessary
+                # NN_conn_mat[:, [newNode.nodeInd]] += NN_conn_mat[:, [gchild_nodeInd]]
                 # Then delete the neighbor-information for the already merged children (out of efficiency)
                 NN_conn_mat[:, [gchild_nodeInd]] = 0
                 NN_conn_mat[[gchild_nodeInd], :] = 0
