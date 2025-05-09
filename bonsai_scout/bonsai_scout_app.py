@@ -2009,8 +2009,8 @@ def server(input, output, session: Session):
             return ""
         if data[0] != "?dir":
             return ""
-        if os.path.exists("/scicore/web/scismara/scismara/www/scMARA/jobs/{}/downloads/index.html".format(data[1])):
-            return "https://scmara.unibas.ch/BONSAI/jobs/{}/downloads/index.html".format(data[1])
+        if os.path.exists("/scicore/web/scismara/scismara/www/BONSAI/jobs/{}/downloads/index.html".format(data[1])):
+            return "https://bonsai.unibas.ch/BONSAI/jobs/{}/downloads/index.html".format(data[1])
         return ""
 
     @render.ui
