@@ -471,20 +471,21 @@ if args.step in ['metadata', 'all']:
     outputFolder = find_latest_tree_folder(results_folder, not_final=True)
 
     if scData is None:
-        scData = loadReconstructedTreeAndData(args, outputFolder, all_genes=False, get_cell_info=False,
-                                              reprocess_data=False, all_ranks=False, rel_to_results=True,
-                                              no_data_needed=True)
+        all_genes = False
+        scData = loadReconstructedTreeAndData(args, outputFolder, all_genes=all_genes, get_cell_info=False,
+                                              reprocess_data=True, all_ranks=False, rel_to_results=True,
+                                              no_data_needed=False, get_posterior_ltqs=True)
 
-    scDataUncorrected = loadReconstructedTreeAndData(args, outputFolder, reprocess_data=True, all_genes=False,
-                                                     all_ranks=False, get_cell_info=False, corrected_data=False,
-                                                     rel_to_results=True, no_data_needed=False, single_process=False,
-                                                     keep_original_data=False, calc_loglik=False, get_data=True)
+    # scDataUncorrected = loadReconstructedTreeAndData(args, outputFolder, reprocess_data=True, all_genes=False,
+    #                                                  all_ranks=False, get_cell_info=False, corrected_data=False,
+    #                                                  rel_to_results=True, no_data_needed=False, single_process=False,
+    #                                                  keep_original_data=False, calc_loglik=False, get_data=True)
 
     if mpiRank == 0:
         finalFolder = getOutputFolder(zscore_cutoff=args.zscore_cutoff, tmp_file=os.path.basename(args.tmp_folder),
                                       final=True)
-        scDataUncorrected.storeTreeInFolder(scData.result_path(finalFolder), with_coords=True, verbose=args.verbose,
-                                            store_posterior_ltqs=True)
+        scData.storeTreeInFolder(scData.result_path(finalFolder), with_coords=True, verbose=args.verbose,
+                                 store_posterior_ltqs=True, ltqs_were_rescaled_by_var=args.rescale_by_var)
         mp_print("\n\nStored final tree in " + scData.result_path(finalFolder) + ".\n\n")
 
         metadata = getMetadata(args, scData, outputFolder, computationTime)

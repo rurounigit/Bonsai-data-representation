@@ -105,8 +105,7 @@ else:
     all_genes = False
 
 scData, _ = loadReconstructedTreeAndData(run_configs, tree_folder, reprocess_data=reprocess_data,
-                                         get_cell_info=True, all_ranks=False,
-                                         corrected_data=False, all_genes=all_genes, get_data=True,
+                                         get_cell_info=True, all_ranks=False, all_genes=all_genes, get_data=True,
                                          rel_to_results=False, no_data_needed=True, calc_loglik=False,
                                          get_posterior_ltqs=True)
 
@@ -170,12 +169,22 @@ merge_cells_at_zero_dist(scData)
 # nwk_str = scData.tree.to_newick(results_path=scData.result_path('tree.nwk'))
 nwk_str = scData.tree.to_newick()
 
+# If we get posterior_ltqs and rescale_by_var was True, then we have to undo that rescaling
+if reprocess_data and run_configs.rescale_by_var:
+    undo_rescaling_by_var = True
+else:
+    undo_rescaling_by_var = False
+
 if scData.tree.root.ltqsAIRoot is not None:
     ltqs = np.zeros((scData.metadata.nGenes, scData.nVerts))
     ltqs_vars = np.zeros((scData.metadata.nGenes, scData.nVerts))
     for vert_ind, node in scData.tree.vert_ind_to_node.items():
-        ltqs[:, vert_ind] = node.ltqsAIRoot
-        ltqs_vars[:, vert_ind] = node.getLtqsVars(AIRoot=True)
+        if undo_rescaling_by_var:
+            ltqs[:, vert_ind] = node.ltqsAIRoot * np.sqrt(scData.metadata.geneVariances)
+            ltqs_vars[:, vert_ind] = node.getLtqsVars(AIRoot=True) * scData.metadata.geneVariances
+        else:
+            ltqs[:, vert_ind] = node.ltqsAIRoot
+            ltqs_vars[:, vert_ind] = node.getLtqsVars(AIRoot=True)
 else:
     ltqs = None
     ltqs_vars = None
