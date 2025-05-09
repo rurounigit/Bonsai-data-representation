@@ -218,7 +218,7 @@ if args.step in ['core_calc', 'all']:
         Path(tmp_folder).mkdir(parents=True, exist_ok=True)
         nChildNN = -1 if args.use_knn < 0 else 50
         # TODO: REMOVE THIS!
-        bs_glob.skip_it = True
+        bs_glob.skip_it = False
         scData.tree.root.mergeChildrenUB(scData.tree.root.ltqs, scData.tree.root.getW(), scData=scData,
                                          sequential=SEQUENTIAL, verbose=args.verbose,
                                          ellipsoidSize=origEllipsoidSize, outputFolder=outputFolder, nChildNN=nChildNN,

@@ -1643,7 +1643,7 @@ class TreeNode:
         if runConfigs['useNN']:
             # Test whether there are enough nearest neighbours for each node. Otherwise, get new NNs next round
             unq_node_inds, counts = np.unique(np.array(old_pairs + new_pairs), return_counts=True)
-            # counts = np.sum(NNInfo['conn_mat'], axis=0)
+            # TODO: Check if we cannot just keep track of these counts
             few_nn_inds = unq_node_inds[
                 np.where(counts <= 0.2 * runConfigs['kNN'])[0]]  # TODO: Only do those problematic ones
             for few_nn_node_ind in few_nn_inds:
@@ -2063,9 +2063,16 @@ class TreeNode:
             NNInfo['leafToChild'] = {nodeInd: nodeInd for nodeInd in nodeInds}
 
         nns = np.array(index.IDs)[nns]
-        pairs = [(new_node.nodeInd, NNInfo['leafToChild'][nb]) for nb in nns[0, :] if
-                 NNInfo['leafToChild'][nb] != new_node.nodeInd]
+        # Make list of unique neighbors that are not the node itself
+        non_unique_partners = np.array([NNInfo['leafToChild'][nb] for nb in nns[0, :] if NNInfo['leafToChild'][nb] != new_node.nodeInd])
+        seen = set()
+        partners = []
+        for item in non_unique_partners:
+            if item not in seen:
+                seen.add(item)
+                partners.append(item)
 
+        pairs = [(new_node.nodeInd, partner) for partner in partners]
         if len(pairs) > 0:
             if len(pairs) > runConfigs['kNN']:
                 pairs = pairs[:runConfigs['kNN']]
@@ -2445,7 +2452,8 @@ class TreeNode:
             # First add the neighbor-connections from the merged children
             NN_conn_mat = NNInfo['conn_mat']
             for gchild_nodeInd in gchildInds:
-                NN_conn_mat[:, [newNode.nodeInd]] += NN_conn_mat[:, [gchild_nodeInd]]
+                # TODO: Check if this is necessary
+                # NN_conn_mat[:, [newNode.nodeInd]] += NN_conn_mat[:, [gchild_nodeInd]]
                 # Then delete the neighbor-information for the already merged children (out of efficiency)
                 NN_conn_mat[:, [gchild_nodeInd]] = 0
                 NN_conn_mat[[gchild_nodeInd], :] = 0
