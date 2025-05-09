@@ -168,8 +168,8 @@ class SCData:
                                                        zscoreCutoff=zscoreCutoff, mpiInfo=mpiInfo)
         if mpiInfo.rank != 0:
             return
-        if returnUncorrected:
-            self.unscaled = copy.deepcopy(originalData)
+        # if returnUncorrected:
+        #     self.unscaled = copy.deepcopy(originalData)
 
         self.metadata.geneVariances = originalData.geneVariances
         # Scale diffusion by estimated gene variance.
@@ -337,7 +337,7 @@ class SCData:
 
     # Used
     def storeTreeInFolder(self, treeFolder, with_coords=False, verbose=False, all_ranks=False, cleanup_tree=True,
-                          nwk=True, store_posterior_ltqs=False, rescale_posteriors_by_var=False):
+                          nwk=True, store_posterior_ltqs=False, ltqs_were_rescaled_by_var=True):
         coords_folder = treeFolder if with_coords else None
         mpiRank = mpi_wrapper.get_process_rank()
         if cleanup_tree:
@@ -346,7 +346,7 @@ class SCData:
             Path(treeFolder).mkdir(parents=True, exist_ok=True)
             edgeList, distList, vertInfo = self.tree.getEdgeVertInfo(coords_folder=coords_folder, verbose=False,
                                                                      store_posterior_ltqs=store_posterior_ltqs,
-                                                                     rescale_posteriors_by_var=rescale_posteriors_by_var,
+                                                                     undo_rescale_by_var=ltqs_were_rescaled_by_var,
                                                                      variances=self.metadata.geneVariances)
 
             with open(os.path.join(treeFolder, 'edgeInfo.txt'), "w") as file:
@@ -1851,14 +1851,14 @@ def loadReconstructedTreeAndData(args, tree_folder, reprocess_data=False, all_ge
                                                               loglikVarCorr=scData.metadata.loglikVarCorr)
         mp_print("Loaded tree has loglikelihood %.4f" % scData.metadata.loglik)
 
-    if (not corrected_data) and (scData.unscaled is not None) and (scData.unscaled.ltqs is not None) \
-            and get_all_data and data_found:
-        # scData.originalData = scData.unscaled
-        scData.unscaled = None
-        addDataToTree(scData, vertIndToNode)
-
-        mp_print("Calculating ltqs of internal nodes", ALL_RANKS=True)
-        scData.tree.root.getLtqsComplete(mem_friendly=True)
+    # if (not corrected_data) and (scData.unscaled is not None) and (scData.unscaled.ltqs is not None) \
+    #         and get_all_data and data_found:
+    #     # scData.originalData = scData.unscaled
+    #     scData.unscaled = None
+    #     addDataToTree(scData, vertIndToNode)
+    #
+    #     mp_print("Calculating ltqs of internal nodes", ALL_RANKS=True)
+    #     scData.tree.root.getLtqsComplete(mem_friendly=True)
 
     if data_found and get_posterior_ltqs and (scData.tree.root.ltqsAIRoot is None):
         if scData.tree.root.ltqs is None:
@@ -2317,7 +2317,7 @@ def read_and_filter(data_folder, meansfile, stdsfile, sanityOutput, zscoreCutoff
                             tmp_vars.append(vars)
                             tmp_gene_vars.append(gene_var)
                             genes_to_keep.append(row_ind)
-                        if (row_ind - myTasks[0]) == print_ind:
+                        if (row_ind - myTasks[0]) > print_ind:
                             print_ind *= 2
                             mp_print(
                                 "Processing data for the the %d-th feature out of %d, this took %.2f seconds." % (

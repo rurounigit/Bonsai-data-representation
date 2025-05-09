@@ -2625,7 +2625,7 @@ class Tree:
         return edge_list, dist_list, orig_vert_names, starryYN, nodeIndToNode
 
     def getEdgeVertInfo(self, coords_folder=None, verbose=False, store_posterior_ltqs=False,
-                        rescale_posteriors_by_var=False, variances=None):
+                        undo_rescale_by_var=True, variances=None):
         edgeList, distList, nodeIndToVertId, _, nodeIndToNode = self.compile_tree_from_scData_tree()
         if coords_folder is not None:
             if not store_posterior_ltqs:
@@ -2655,10 +2655,10 @@ class Tree:
                             ltqs.append(nodeIndToNode[nodeInd].ltqs)
                             ltqsVars.append(nodeIndToNode[nodeInd].getLtqsVars())
                         else:
-                            if not rescale_posteriors_by_var:
+                            if undo_rescale_by_var:
                                 # This means we have to undo the rescaling that was done before
-                                node_ltqs_post = nodeIndToNode[nodeInd].ltqsAIRoot / np.sqrt(variances)
-                                node_ltqsVars_post = nodeIndToNode[nodeInd].getLtqsVars(AIRoot=True) / variances
+                                node_ltqs_post = nodeIndToNode[nodeInd].ltqsAIRoot * np.sqrt(variances)
+                                node_ltqsVars_post = nodeIndToNode[nodeInd].getLtqsVars(AIRoot=True) * variances
                             else:
                                 node_ltqs_post = nodeIndToNode[nodeInd].ltqsAIRoot
                                 node_ltqsVars_post = nodeIndToNode[nodeInd].getLtqsVars(AIRoot=True)
