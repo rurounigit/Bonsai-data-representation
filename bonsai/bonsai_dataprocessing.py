@@ -1860,7 +1860,7 @@ def loadReconstructedTreeAndData(args, tree_folder, reprocess_data=False, all_ge
     #     mp_print("Calculating ltqs of internal nodes", ALL_RANKS=True)
     #     scData.tree.root.getLtqsComplete(mem_friendly=True)
 
-    if data_found and get_posterior_ltqs and (scData.tree.root.ltqsAIRoot is None):
+    if data_found and get_posterior_ltqs and get_all_data and (scData.tree.root.ltqsAIRoot is None):
         if scData.tree.root.ltqs is None:
             scData.tree.root.getLtqsComplete(mem_friendly=True)
         scData.tree.root.getAIRootInfo(None, None)
