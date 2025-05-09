@@ -2016,7 +2016,7 @@ class TreeNode:
     def get_new_nn_pairs(self, new_node, NNInfo, runConfigs, UBInfo=None, old_pairs_list=None, update_nn_index=False,
                          xrAIRoot=None):
         if UBInfo is not None:
-            # In this case also delete old UB-information on the "new_node", since we're going to calculate that again.
+            # TODO: Check if this is necessary: # In this case also delete old UB-information on the "new_node", since we're going to calculate that again.
             to_be_deleted = np.where(UBInfo['pairs'] == new_node.nodeInd)[0]
             UBInfo['pairs'] = np.delete(UBInfo['pairs'], to_be_deleted, axis=0)
             UBInfo['UBs'] = np.delete(UBInfo['UBs'], to_be_deleted)
@@ -2031,7 +2031,7 @@ class TreeNode:
             centered_query = (new_node.ltqs - NNInfo['subtracted_mean'])[:, None]
             normalized_query = centered_query / np.linalg.norm(centered_query)
             index, nns = getApproxNNs(normalized_query, index=NNInfo['index'],
-                                      k=2 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
+                                      k=20 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
         else:
             # We gather information about the current children of the root
             ltqsCh, _, _ = self.getInfoChildren()
@@ -2059,7 +2059,7 @@ class TreeNode:
             normalized_query = centered_query / np.linalg.norm(centered_query)
 
             index, nns = getApproxNNs(normalized_query, index=NNInfo['index'],
-                                      k=2 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
+                                      k=20 * runConfigs['kNN'], pointsIds=[new_node.nodeInd], addPoints=False)
             NNInfo['leafToChild'] = {nodeInd: nodeInd for nodeInd in nodeInds}
 
         nns = np.array(index.IDs)[nns]
@@ -2067,6 +2067,8 @@ class TreeNode:
                  NNInfo['leafToChild'][nb] != new_node.nodeInd]
 
         if len(pairs) > 0:
+            if len(pairs) > runConfigs['kNN']:
+                pairs = pairs[:runConfigs['kNN']]
             # Update the connectivity matrix for the nearest neighbors with these new pairs
             pairs_array = np.array(pairs)
             NNInfo['conn_mat'][pairs_array[:, 0], pairs_array[:, 1]] = True
