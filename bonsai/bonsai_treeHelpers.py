@@ -2021,12 +2021,6 @@ class TreeNode:
             ltqsCh -= xrAIRoot[:, None]
             NNInfo['subtracted_mean'] = xrAIRoot
 
-            ltqsCh, _, _ = self.getInfoChildren()
-
-            # We center the ltq-information around the root
-            ltqsCh -= xrAIRoot[:, None]
-            NNInfo['subtracted_mean'] = xrAIRoot
-
             # Instead of taking cosine metric, we can also normalize the vectors and use squared-euclidean
             norms = np.linalg.norm(ltqsCh, axis=0)
             np.divide(ltqsCh, norms, out=ltqsCh)
