@@ -1094,142 +1094,124 @@ class TreeNode:
             oldPairsDone = 0
             # mp_print("Memory 2 ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
             start_testing_merges = time.time()
-            if (not bs_glob.skip_it) or (not os.path.exists('/Users/Daan/Documents/postdoc/Bonsai-data-representation/data/simulated_16_gens/temp_data.pkl')):
-                while True:
-                    if (indTask + 1) == nTasks:  # This was the last task
-                        if not runConfigs['useUBNow']:
-                            break  # This process is done.
-                        foundMax = True  # This process has found its maximum. Communicate this with others.
-                    # mp_print("Memory 3 ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
-                    # Communicate if maximum was found
-                    if runConfigs['useUBNow'] and (foundMax or ((indTask + 1 % 100 == 0) and (task >= nNewPairs))):
-                        # Communicate maximum when: this process found maximum or 100 tasks have passed, but only after the
-                        # newPairs have all been calculated, i.e., the pairs that include the new ancestor
-                        foundMax, allFoundMax, maxdLogL, maxdLogLZeroRoot = communicateMaxs(maxdLogL, maxdLogLZeroRoot,
-                                                                                            foundMax, task, nNewPairs,
-                                                                                            UBInfo, mpiInfoTmp)
-                        if allFoundMax:  # When all processes have found the maximum, quit the while-loop
-                            break
-                        if foundMax:  # When this process found max but others not, immediately return to communication
-                            continue
-
-                    # Since no maximum was found, go to next task.
-                    indTask += 1
-                    skip, task, nodeInd1, nodeInd2, ind1, ind2 = initializeTask(indTask, myTasks, pairs,
-                                                                                chInfo['nodeIndToChildInd'], verbose,
-                                                                                mpiInfoTmp, runConfigs)
-                    if skip:
+            while True:
+                if (indTask + 1) == nTasks:  # This was the last task
+                    if not runConfigs['useUBNow']:
+                        break  # This process is done.
+                    foundMax = True  # This process has found its maximum. Communicate this with others.
+                # mp_print("Memory 3 ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
+                # Communicate if maximum was found
+                if runConfigs['useUBNow'] and (foundMax or ((indTask + 1 % 100 == 0) and (task >= nNewPairs))):
+                    # Communicate maximum when: this process found maximum or 100 tasks have passed, but only after the
+                    # newPairs have all been calculated, i.e., the pairs that include the new ancestor
+                    foundMax, allFoundMax, maxdLogL, maxdLogLZeroRoot = communicateMaxs(maxdLogL, maxdLogLZeroRoot,
+                                                                                        foundMax, task, nNewPairs,
+                                                                                        UBInfo, mpiInfoTmp)
+                    if allFoundMax:  # When all processes have found the maximum, quit the while-loop
+                        break
+                    if foundMax:  # When this process found max but others not, immediately return to communication
                         continue
 
-                    # First check whether next biggest UB is smaller than currently found max
-                    if runConfigs['useUBNow'] and (task >= nNewPairs) and (maxdLogL[2] > UBInfo['UBs'][task - nNewPairs]):
-                        foundMax = True
-                        if verbose:
-                            mp_print("Process %d found an optimal solution after comparing %d pairs for which UB was known "
-                                     "out of %.0f" % (mpiInfoTmp.rank, oldPairsDone, nTasks - nNewPairs / mpiInfoTmp.size),
-                                     ALL_RANKS=True)
-                        continue
+                # Since no maximum was found, go to next task.
+                indTask += 1
+                skip, task, nodeInd1, nodeInd2, ind1, ind2 = initializeTask(indTask, myTasks, pairs,
+                                                                            chInfo['nodeIndToChildInd'], verbose,
+                                                                            mpiInfoTmp, runConfigs)
+                if skip:
+                    continue
 
-                    # Calculate loglikelihood for current pair and (if runConfigs allow) estimate UB
-                    # Gather all necessary information on the candidate pair.
-                    # mp_print("Memory 5 ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
-                    if ind1 != oldInd1:  # If child1 is the same as before, we re-use some information.
-                        if not runConfigs['parNow']:
-                            # If this round is not run in parallel, information needs to be collected from child-objects
-                            child2, sortedNodeInds, child1, child1Tuple, rootMinusFirst_ltqs, rootMinusFirst_W_g = self.getChildInfo(
-                                xrAsIfRoot_g, WAsIfRoot_g, ind1, ind2, nodeInd1, recalcInd1=True)
-                            tOld1, wbar1_g, ltqs1, ltqsVars1, nodeInd1 = child1Tuple
-                        else:
-                            # If this round is run in parallel, information was already stored in numpy-objects
-                            tOld1 = tChildren[ind1]
-                            ltqs1 = ltqsChildren[:, ind1]
-                            ltqsVars1 = ltqsVarsChildren[:, ind1]
-                            wbar1_g = 1 / (tOld1 + ltqsVars1)
-                            rootMinusFirst_W_g = WAsIfRoot_g - wbar1_g
-                            rootMinusFirst_ltqs = xrAsIfRoot_g * WAsIfRoot_g - wbar1_g * ltqs1
-                            # mp_print("Memory 5a ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
-                        oldInd1 = ind1
-                    elif not runConfigs['parNow']:
-                        # If this round is not run in parallel, but child1 remained, we get child2 info from child-objects
-                        child2, sortedNodeInds = self.getChildInfo(xrAsIfRoot_g, WAsIfRoot_g, ind1, ind2, nodeInd1,
-                                                                   recalcInd1=False)
-                    # Finally, we get child2-info in the same way depending on parallelization.
-                    if runConfigs['parNow']:
-                        tOld2 = tChildren[ind2]
-                        ltqs2 = ltqsChildren[:, ind2]
-                        ltqsVars2 = ltqsVarsChildren[:, ind2]
-                        wbar2_g = 1 / (tOld2 + ltqsVars2)
-                        sortedNodeInds = tuple(sorted([nodeInd1, nodeInd2]))
+                # First check whether next biggest UB is smaller than currently found max
+                if runConfigs['useUBNow'] and (task >= nNewPairs) and (maxdLogL[2] > UBInfo['UBs'][task - nNewPairs]):
+                    foundMax = True
+                    if verbose:
+                        mp_print("Process %d found an optimal solution after comparing %d pairs for which UB was known "
+                                 "out of %.0f" % (mpiInfoTmp.rank, oldPairsDone, nTasks - nNewPairs / mpiInfoTmp.size),
+                                 ALL_RANKS=True)
+                    continue
+
+                # Calculate loglikelihood for current pair and (if runConfigs allow) estimate UB
+                # Gather all necessary information on the candidate pair.
+                # mp_print("Memory 5 ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
+                if ind1 != oldInd1:  # If child1 is the same as before, we re-use some information.
+                    if not runConfigs['parNow']:
+                        # If this round is not run in parallel, information needs to be collected from child-objects
+                        child2, sortedNodeInds, child1, child1Tuple, rootMinusFirst_ltqs, rootMinusFirst_W_g = self.getChildInfo(
+                            xrAsIfRoot_g, WAsIfRoot_g, ind1, ind2, nodeInd1, recalcInd1=True)
+                        tOld1, wbar1_g, ltqs1, ltqsVars1, nodeInd1 = child1Tuple
                     else:
-                        tOld2, wbar2_g, ltqs2, ltqsVars2, nodeInd2 = child2.getInfo()
-                    # Calculate increase in loglikelihood at optimal diff. times for this pair
-                    dLogLPair, optTimes, ltqs_gi, ltqsVars_gi, wir_gi = calcSingleDLogL(xrAsIfRoot_g, WAsIfRoot_g, ltqs1,
-                                                                                        ltqsVars1, wbar1_g, tOld1,
-                                                                                        rootMinusFirst_W_g,
-                                                                                        rootMinusFirst_ltqs, ltqs2,
-                                                                                        ltqsVars2, wbar2_g, tOld2,
-                                                                                        sequential=sequential, tol=1e-4,
-                                                                                        returnAll=True)
-                    pairsDone += 1
-                    # If useUB, make UB-estimate
-                    if runConfigs['useUB'] and (task < nNewPairs):
-                        # TODO: Decide if you want to use old root position for estimating upper bound or not.
-                        # Currently I just use the current root-position to determine a new upper bound. This will only go
-                        # wrong when the root is moving out of the ellipsoid centered around the current position, before
-                        # it will run out of the original ellipsoid. This is very unlikely.
-                        justUseNewRoot = True
-                        if justUseNewRoot:
-                            rootInfo = {"pos": xrAsIfRoot_g, "prec": WAsIfRoot_g, "nChild": chInfo['nChild']}
-                            dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW = estimateDerBasedDLogLUB(rootInfo,
-                                                                                             optTimes,
-                                                                                             ltqs_gi=ltqs_gi,
-                                                                                             ltqsVars_gi=ltqsVars_gi,
-                                                                                             wir_gi=wir_gi)
-                            UBInfo['tuples'][sortedNodeInds] = (dLogLPair, ddLogLPerEpsx, ddLogLPerEpsW)
-                        # else:
-                        #     if runConfigs['getNewUB']:  # Using this we use the just calculated optTimes
-                        #         dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW = estimateDerBasedDLogLUB(oldRoot,
-                        #                                                                          optTimes,
-                        #                                                                          ltqs_gi=ltqs_gi,
-                        #                                                                          ltqsVars_gi=ltqsVars_gi,
-                        #                                                                          wir_gi=wir_gi)
-                        #         UBInfo['tuples'][sortedNodeInds] = (dLogLPair, ddLogLPerEpsx, ddLogLPerEpsW)
-                        #     else:  # This re-optimises the times based on the old-root position
-                        #         dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW = estimateDerBasedDLogLUB(oldRoot,
-                        #                                                                          optTimes, child1=child1,
-                        #                                                                          child2=child2,
-                        #                                                                          sequential=sequential)
-                        #     UBInfo['tuples'][sortedNodeInds] = (dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW)
-                    else:
-                        oldPairsDone += 1
+                        # If this round is run in parallel, information was already stored in numpy-objects
+                        tOld1 = tChildren[ind1]
+                        ltqs1 = ltqsChildren[:, ind1]
+                        ltqsVars1 = ltqsVarsChildren[:, ind1]
+                        wbar1_g = 1 / (tOld1 + ltqsVars1)
+                        rootMinusFirst_W_g = WAsIfRoot_g - wbar1_g
+                        rootMinusFirst_ltqs = xrAsIfRoot_g * WAsIfRoot_g - wbar1_g * ltqs1
+                        # mp_print("Memory 5a ", psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2, " MB.", ONLY_RANK=1)
+                    oldInd1 = ind1
+                elif not runConfigs['parNow']:
+                    # If this round is not run in parallel, but child1 remained, we get child2 info from child-objects
+                    child2, sortedNodeInds = self.getChildInfo(xrAsIfRoot_g, WAsIfRoot_g, ind1, ind2, nodeInd1,
+                                                               recalcInd1=False)
+                # Finally, we get child2-info in the same way depending on parallelization.
+                if runConfigs['parNow']:
+                    tOld2 = tChildren[ind2]
+                    ltqs2 = ltqsChildren[:, ind2]
+                    ltqsVars2 = ltqsVarsChildren[:, ind2]
+                    wbar2_g = 1 / (tOld2 + ltqsVars2)
+                    sortedNodeInds = tuple(sorted([nodeInd1, nodeInd2]))
+                else:
+                    tOld2, wbar2_g, ltqs2, ltqsVars2, nodeInd2 = child2.getInfo()
+                # Calculate increase in loglikelihood at optimal diff. times for this pair
+                dLogLPair, optTimes, ltqs_gi, ltqsVars_gi, wir_gi = calcSingleDLogL(xrAsIfRoot_g, WAsIfRoot_g, ltqs1,
+                                                                                    ltqsVars1, wbar1_g, tOld1,
+                                                                                    rootMinusFirst_W_g,
+                                                                                    rootMinusFirst_ltqs, ltqs2,
+                                                                                    ltqsVars2, wbar2_g, tOld2,
+                                                                                    sequential=sequential, tol=1e-4,
+                                                                                    returnAll=True)
+                pairsDone += 1
+                # If useUB, make UB-estimate
+                if runConfigs['useUB'] and (task < nNewPairs):
+                    # TODO: Decide if you want to use old root position for estimating upper bound or not.
+                    # Currently I just use the current root-position to determine a new upper bound. This will only go
+                    # wrong when the root is moving out of the ellipsoid centered around the current position, before
+                    # it will run out of the original ellipsoid. This is very unlikely.
+                    justUseNewRoot = True
+                    if justUseNewRoot:
+                        rootInfo = {"pos": xrAsIfRoot_g, "prec": WAsIfRoot_g, "nChild": chInfo['nChild']}
+                        dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW = estimateDerBasedDLogLUB(rootInfo,
+                                                                                         optTimes,
+                                                                                         ltqs_gi=ltqs_gi,
+                                                                                         ltqsVars_gi=ltqsVars_gi,
+                                                                                         wir_gi=wir_gi)
+                        UBInfo['tuples'][sortedNodeInds] = (dLogLPair, ddLogLPerEpsx, ddLogLPerEpsW)
+                    # else:
+                    #     if runConfigs['getNewUB']:  # Using this we use the just calculated optTimes
+                    #         dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW = estimateDerBasedDLogLUB(oldRoot,
+                    #                                                                          optTimes,
+                    #                                                                          ltqs_gi=ltqs_gi,
+                    #                                                                          ltqsVars_gi=ltqsVars_gi,
+                    #                                                                          wir_gi=wir_gi)
+                    #         UBInfo['tuples'][sortedNodeInds] = (dLogLPair, ddLogLPerEpsx, ddLogLPerEpsW)
+                    #     else:  # This re-optimises the times based on the old-root position
+                    #         dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW = estimateDerBasedDLogLUB(oldRoot,
+                    #                                                                          optTimes, child1=child1,
+                    #                                                                          child2=child2,
+                    #                                                                          sequential=sequential)
+                    #     UBInfo['tuples'][sortedNodeInds] = (dLogLOld, ddLogLPerEpsx, ddLogLPerEpsW)
+                else:
+                    oldPairsDone += 1
 
-                    # Compare calculated dLogL with current maximum, and replace if larger
-                    # TODO: Store optTimes for this pair as well. Saves a recompute at the end.
-                    if random:
-                        dLogLDict[sortedNodeInds] = dLogLPair
-                    if optTimes[-1] > 1e-6:
-                        if dLogLPair > maxdLogL[2]:
-                            maxdLogL = (sortedNodeInds[0], sortedNodeInds[1], dLogLPair)
-                    else:
-                        if dLogLPair > maxdLogLZeroRoot[2]:
-                            maxdLogLZeroRoot = (sortedNodeInds[0], sortedNodeInds[1], dLogLPair)
-
-                # TODO: REMOVE THIS!
-                # Store
-                # - (pairsDone, maxdLogL, maxdLogLZeroRoot)
-                # - UBInfo
-                # Save to a file
-                if bs_glob.skip_it:
-                    with open('/Users/Daan/Documents/postdoc/Bonsai-data-representation/data/simulated_16_gens/temp_data.pkl', 'wb') as f:
-                        pickle.dump((pairsDone, maxdLogL, maxdLogLZeroRoot, UBInfo), f)
-                    exit()
-            else:
-                # Later: Load them back
-                with open('/Users/Daan/Documents/postdoc/Bonsai-data-representation/data/simulated_16_gens/temp_data.pkl', 'rb') as f:
-                    pairsDone, maxdLogL, maxdLogLZeroRoot, UBInfo = pickle.load(f)
-                bs_glob.skip_it = False
-                # TODO: END REMOVE
-
+                # Compare calculated dLogL with current maximum, and replace if larger
+                # TODO: Store optTimes for this pair as well. Saves a recompute at the end.
+                if random:
+                    dLogLDict[sortedNodeInds] = dLogLPair
+                if optTimes[-1] > 1e-6:
+                    if dLogLPair > maxdLogL[2]:
+                        maxdLogL = (sortedNodeInds[0], sortedNodeInds[1], dLogLPair)
+                else:
+                    if dLogLPair > maxdLogLZeroRoot[2]:
+                        maxdLogLZeroRoot = (sortedNodeInds[0], sortedNodeInds[1], dLogLPair)
 
             # mp_print("Testing the merge pairs took {} seconds.".format(time.time() - start_testing_merges), DEBUG=True)
             start_post_process = time.time()
