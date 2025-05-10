@@ -1706,7 +1706,6 @@ def recoverTreeFromFile(args, mergerFilename, allRanks=True):
 def initializeSCData(args, createStarTree=True, allGenes=False, allRanks=True, otherRanksMinimalInfo=False,
                      optTimes=True, getOrigData=False, returnUncorrected=False, noDataNeeded=False):
     zscoreCutoff = -1 if allGenes else args.zscore_cutoff
-
     mpiInfo = mpi_wrapper.get_mpi_info(singleProcess=(not allRanks))
     scData = SCData(dataset=args.dataset, filenamesData=args.filenames_data, verbose=args.verbose,
                     pathToOrigData=args.data_folder, zscoreCutoff=zscoreCutoff, getOrigData=getOrigData,
@@ -1826,19 +1825,20 @@ def getMetadata(args, scData, outputFolder_raw, computationTime):
 def loadReconstructedTreeAndData(args, tree_folder, reprocess_data=False, all_genes=False, all_ranks=True,
                                  get_cell_info=False, corrected_data=True, rel_to_results=False, no_data_needed=False,
                                  single_process=False, keep_original_data=False, calc_loglik=False, get_data=True,
-                                 get_posterior_ltqs=False):
+                                 get_posterior_ltqs=False, otherRanksMinimalInfo=False):
     if type(args) is dict:
         args = convert_dict_to_named_tuple(args)
     mpi_info = mpi_wrapper.get_mpi_info(singleProcess=single_process)
     if reprocess_data:
         scData = initializeSCData(args, createStarTree=False, allGenes=all_genes, allRanks=all_ranks, optTimes=False,
-                                  getOrigData=True, returnUncorrected=(not corrected_data), noDataNeeded=no_data_needed)
+                                  getOrigData=True, returnUncorrected=(not corrected_data), noDataNeeded=no_data_needed,
+                                  otherRanksMinimalInfo=otherRanksMinimalInfo)
     else:
         scData = SCData(onlyObject=True, dataset=args.dataset, results_folder=args.results_folder)
     if rel_to_results:
         tree_folder = scData.result_path(tree_folder)
 
-    get_all_data = get_data and ((mpi_info.rank == 0) or all_ranks)
+    get_all_data = get_data and ((mpi_info.rank == 0) or (all_ranks and (not otherRanksMinimalInfo)))
     tree_tuple = reconstructTreeFromEdgeVertInfo(scData, tree_folder, verbose=args.verbose)
     vertIndToNode, vertIndToNodeInd, vertIndToNodeId, edgeList, distList = tree_tuple
     data_found = load_data_for_tree(scData, tree_folder, vertIndToNode, get_all_data=get_all_data,
@@ -2237,7 +2237,6 @@ def read_and_filter(data_folder, meansfile, stdsfile, sanityOutput, zscoreCutoff
     else:
         nGenesOrig = None
     nGenesOrig = mpi_wrapper.bcast(nGenesOrig, root=0)  # Communicate number of genes with other processes
-
     # Get number of cells
     with open(meanspath, 'r') as fmeans:
         reader_means = csv.reader(fmeans, delimiter='\t')
@@ -2350,7 +2349,7 @@ def read_and_filter(data_folder, meansfile, stdsfile, sanityOutput, zscoreCutoff
                                      "Discarding this feature as variance is likely very small".format(row_ind))
                             continue
                         _, _, inferred_gene_mean = neg_loglik_grad_using_measurements_and_errors(opt_res.x, means, vars,
-                                                                                         return_mean_ML=True)
+                                                                                                 return_mean_ML=True)
                         # zscoreSq = np.sum((means - np.mean(means)) ** 2 / vars) / nCells
                         zscoreSq = np.sum((inferred_gene_var / (inferred_gene_var + vars)) * (
                                 means - inferred_gene_mean) ** 2 / vars) / nCells

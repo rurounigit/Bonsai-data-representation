@@ -76,6 +76,21 @@ ICONS = {
 """User-interface is defined here."""
 app_ui = ui.page_sidebar(
     ui.sidebar(
+        ui.HTML("""
+<script>
+  var _paq = window._paq = window._paq || [];
+  /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+  _paq.push(['trackPageView']);
+  _paq.push(['enableLinkTracking']);
+  (function() {
+    var u="https://matomo.sib.swiss/";
+    _paq.push(['setTrackerUrl', u+'matomo.php']);
+    _paq.push(['setSiteId', '231']);
+    var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+    g.async=true; g.src=u+'matomo.js'; s.parentNode.insertBefore(g,s);
+  })();
+</script>
+        """),
         # 1. An accordion giving different options for changing the layout of the tree (zooming, layout-types, ...)
         ui.card(
             ui.card_header(ui.HTML('<strong>Information on selected node:</strong>')),

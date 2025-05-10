@@ -456,7 +456,6 @@ if args.step in ['core_calc', 'all']:
 if args.step in ['metadata', 'all']:
     if args.step == 'metadata':
         computationTime = np.nan
-
     outputFolder = getOutputFolder(zscore_cutoff=args.zscore_cutoff,
                                    redo_starry=(not args.skip_redo_starry), opt_times=(not args.skip_opt_times),
                                    reorderedEdges=True, tmp_file=os.path.basename(args.tmp_folder),
@@ -473,8 +472,8 @@ if args.step in ['metadata', 'all']:
     if scData is None:
         all_genes = False
         scData = loadReconstructedTreeAndData(args, outputFolder, all_genes=all_genes, get_cell_info=False,
-                                              reprocess_data=True, all_ranks=False, rel_to_results=True,
-                                              no_data_needed=False, get_posterior_ltqs=True)
+                                              reprocess_data=True, all_ranks=True, rel_to_results=True,
+                                              no_data_needed=False, get_posterior_ltqs=True, otherRanksMinimalInfo=True)
 
     # scDataUncorrected = loadReconstructedTreeAndData(args, outputFolder, reprocess_data=True, all_genes=False,
     #                                                  all_ranks=False, get_cell_info=False, corrected_data=False,
